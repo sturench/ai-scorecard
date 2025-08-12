@@ -1,0 +1,43 @@
+{
+  "name": "Braga Networking Dev",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bullseye",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "prisma.prisma",
+        "ms-azuretools.vscode-docker",
+        "github.copilot",
+        "github.copilot-chat",
+        "formulahendry.auto-rename-tag",
+        "christian-kohler.path-intellisense",
+        "mikestead.dotenv",
+        "usernamehw.errorlens"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": true
+        },
+        "typescript.preferences.importModuleSpecifier": "non-relative"
+      }
+    }
+  },
+  "forwardPorts": [3000, 5432],
+  "postCreateCommand": "npm install -g pnpm @anthropic-ai/claude-code task-master-ai",
+  "remoteUser": "node",
+  "remoteEnv": {
+    "SSH_AUTH_SOCK": "/tmp/ssh-agent"
+  },
+  "mounts": [
+    "source=${localEnv:SSH_AUTH_SOCK},target=/tmp/ssh-agent,type=bind,consistency=cached"
+  ]
+}

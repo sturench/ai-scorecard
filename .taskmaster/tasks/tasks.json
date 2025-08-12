@@ -1,0 +1,22 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Initialize working directory with main branch setup",
+        "description": "Set up the initial project structure and configure Git repository with main as the primary branch.",
+        "details": "1. Initialize a new Git repository using 'git init'\n2. Configure the default branch to be 'main' using 'git config init.defaultBranch main'\n3. Create initial project structure with necessary directories (src/, docs/, tests/, etc.)\n4. Add a basic .gitignore file appropriate for the project type\n5. Create an initial README.md file with project overview\n6. Set up basic package.json or equivalent project configuration file\n7. Configure Git user settings if not already set globally\n8. Make initial commit with basic project structure\n9. Verify the main branch is properly set as default",
+        "testStrategy": "1. Verify Git repository is initialized by checking for .git directory\n2. Confirm main branch is set as default using 'git branch --show-current'\n3. Check that all created directories and files are present and properly structured\n4. Verify .gitignore is working by testing with temporary files\n5. Confirm initial commit exists using 'git log'\n6. Test that new commits are made to main branch by default",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-08-12T17:05:55.791Z",
+      "description": "Default tasks context",
+      "updated": "2025-08-12T17:06:08.507Z"
+    }
+  }
+}
