@@ -1,0 +1,42 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit hooks..."
+
+# 1. Check for secrets first (fail fast)
+echo "🔐 Checking for secrets..."
+npm run security:secrets
+
+if [ $? -ne 0 ]; then
+  echo "❌ Secrets detected! Please remove secrets before committing."
+  exit 1
+fi
+
+# 2. Run lint-staged (prettier, eslint on staged files)
+echo "🎨 Running prettier and eslint on staged files..."
+npx lint-staged
+
+if [ $? -ne 0 ]; then
+  echo "❌ Linting failed! Please fix the issues above."
+  exit 1
+fi
+
+# 3. TypeScript type checking
+echo "🔍 Running TypeScript type checking..."
+npm run typecheck
+
+if [ $? -ne 0 ]; then
+  echo "❌ TypeScript errors found! Please fix type errors."
+  exit 1
+fi
+
+# 4. Run tests (fast unit tests only)
+echo "🧪 Running unit tests..."
+npm run test -- --passWithNoTests --silent --watchAll=false --testTimeout=10000
+
+if [ $? -ne 0 ]; then
+  echo "❌ Tests failed! Please fix failing tests."
+  exit 1
+fi
+
+echo "✅ All pre-commit checks passed!"

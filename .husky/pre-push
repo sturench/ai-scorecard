@@ -1,0 +1,60 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🚀 Running pre-push hooks..."
+
+# 1. Run full test suite (including integration tests)
+echo "🧪 Running full test suite..."
+npm run test -- --passWithNoTests --watchAll=false --testTimeout=30000 --maxWorkers=50%
+
+if [ $? -ne 0 ]; then
+  echo "❌ Tests failed! Please fix failing tests before pushing."
+  exit 1
+fi
+
+# 2. Run test coverage check
+echo "📊 Checking test coverage..."
+npm run test:coverage -- --passWithNoTests --watchAll=false --testTimeout=30000 --coverageThreshold='{"global":{"branches":70,"functions":70,"lines":70,"statements":70}}'
+
+if [ $? -ne 0 ]; then
+  echo "⚠️  Test coverage below threshold, but allowing push."
+  echo "💡 Consider improving test coverage before next release."
+fi
+
+# 3. Build the application to ensure it compiles
+echo "🏗️  Building application..."
+npm run build
+
+if [ $? -ne 0 ]; then
+  echo "❌ Build failed! Please fix build errors before pushing."
+  exit 1
+fi
+
+# 4. Run additional security checks
+echo "🔒 Running security audit..."
+npm audit --audit-level moderate
+
+if [ $? -ne 0 ]; then
+  echo "⚠️  Security vulnerabilities found. Consider running 'npm audit fix'."
+  echo "💡 Allowing push, but please address vulnerabilities soon."
+fi
+
+# 5. Check for TODO/FIXME comments that might indicate incomplete work
+echo "📝 Checking for incomplete work markers..."
+TODO_COUNT=$(git diff --cached --name-only | xargs grep -l "TODO\|FIXME\|XXX\|HACK" 2>/dev/null | wc -l)
+if [ "$TODO_COUNT" -gt 0 ]; then
+  echo "⚠️  Found $TODO_COUNT files with TODO/FIXME markers in staged changes."
+  echo "💡 Consider addressing these before pushing to main branch."
+fi
+
+# 6. Validate package.json and package-lock.json are in sync
+if [ -f "package-lock.json" ]; then
+  echo "🔍 Validating package-lock.json is in sync..."
+  npm ci --dry-run > /dev/null 2>&1
+  if [ $? -ne 0 ]; then
+    echo "❌ package-lock.json is out of sync! Run 'npm install' to fix."
+    exit 1
+  fi
+fi
+
+echo "✅ All pre-push checks passed! Ready to push."

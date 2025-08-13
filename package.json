@@ -20,7 +20,10 @@
     "db:reset": "prisma migrate reset",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "husky install"
+    "security:audit": "npm audit --audit-level moderate",
+    "security:secrets": "node scripts/check-secrets.js",
+    "hooks:test": "echo 'Testing git hooks...' && npm run typecheck && npm run lint && npm run test -- --passWithNoTests",
+    "prepare": "husky"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
@@ -55,6 +58,8 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
     "@testing-library/jest-dom": "^6.4.6",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.2",
@@ -68,6 +73,7 @@
     "eslint": "8.57.0",
     "eslint-config-next": "14.2.5",
     "eslint-config-prettier": "^9.1.0",
+    "git-secrets": "^0.0.11",
     "husky": "^9.1.1",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",

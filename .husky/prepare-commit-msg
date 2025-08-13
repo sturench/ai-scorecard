@@ -1,0 +1,52 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Auto-prefix commit messages with conventional commit format for certain branch patterns
+BRANCH_NAME=$(git symbolic-ref --short HEAD 2>/dev/null)
+
+if [ -n "$BRANCH_NAME" ]; then
+  # Extract type from branch name (e.g., feat/user-auth -> feat)
+  case "$BRANCH_NAME" in
+    feat/*)
+      PREFIX="feat: "
+      ;;
+    fix/*)
+      PREFIX="fix: "
+      ;;
+    docs/*)
+      PREFIX="docs: "
+      ;;
+    test/*)
+      PREFIX="test: "
+      ;;
+    refactor/*)
+      PREFIX="refactor: "
+      ;;
+    style/*)
+      PREFIX="style: "
+      ;;
+    perf/*)
+      PREFIX="perf: "
+      ;;
+    build/*)
+      PREFIX="build: "
+      ;;
+    ci/*)
+      PREFIX="ci: "
+      ;;
+    chore/*)
+      PREFIX="chore: "
+      ;;
+    *)
+      PREFIX=""
+      ;;
+  esac
+
+  # Only add prefix if commit message doesn't already have conventional format
+  if [ -n "$PREFIX" ] && [ -f "$1" ]; then
+    EXISTING_MSG=$(cat "$1")
+    if ! echo "$EXISTING_MSG" | grep -qE "^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?: "; then
+      echo "${PREFIX}${EXISTING_MSG}" > "$1"
+    fi
+  fi
+fi
