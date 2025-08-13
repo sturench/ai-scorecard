@@ -80,6 +80,7 @@ export interface HubspotSyncOptions {
 }
 
 export interface HubspotSyncResult {
+  success?: boolean;
   contactId?: string;
   dealId?: string;
   error?: string;
