@@ -32,12 +32,10 @@ fi
 
 # 4. Run additional security checks
 echo "🔒 Running security audit..."
-npm audit --audit-level moderate
-
-if [ $? -ne 0 ]; then
+npm audit --audit-level high || {
   echo "⚠️  Security vulnerabilities found. Consider running 'npm audit fix'."
   echo "💡 Allowing push, but please address vulnerabilities soon."
-fi
+}
 
 # 5. Check for TODO/FIXME comments that might indicate incomplete work
 echo "📝 Checking for incomplete work markers..."
