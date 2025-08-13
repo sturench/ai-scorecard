@@ -269,6 +269,6 @@ export class HubSpotErrorHandler {
     const baseDelay = 60; // 1 minute
     const delays = [baseDelay, baseDelay * 5, baseDelay * 15, baseDelay * 30, baseDelay * 60];
 
-    return delays[Math.min(retryCount, delays.length - 1)];
+    return delays[Math.min(retryCount, delays.length - 1)] || baseDelay;
   }
 }

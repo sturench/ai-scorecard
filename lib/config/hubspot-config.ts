@@ -279,13 +279,17 @@ export class HubSpotConfigManager {
     const result = { ...base };
 
     for (const [key, value] of Object.entries(overrides)) {
-      if (value && typeof value === 'object' && !Array.isArray(value)) {
-        result[key as keyof HubSpotConfig] = {
-          ...result[key as keyof HubSpotConfig],
-          ...value,
-        } as any;
-      } else {
-        result[key as keyof HubSpotConfig] = value as any;
+      if (value !== undefined) {
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+          // Deep merge objects
+          (result as any)[key] = {
+            ...(result as any)[key],
+            ...value,
+          };
+        } else {
+          // Direct assignment for primitives and arrays
+          (result as any)[key] = value;
+        }
       }
     }
 
