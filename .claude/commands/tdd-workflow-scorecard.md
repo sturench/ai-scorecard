@@ -22,6 +22,7 @@ This command guides agents through proper Test-Driven Development implementation
 
 ```
 ✅ Prerequisites Check:
+- [ ] Understand the full implementation spec from `implementation-spec/README.md`
 - [ ] Task requirements clearly understood
 - [ ] CLAUDE.md testing guidelines reviewed
 - [ ] Test environment configured (Next.js 14.2.5 + Jest + React Testing Library)

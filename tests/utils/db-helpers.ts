@@ -48,6 +48,11 @@ export const cleanupTestDb = async (): Promise<void> => {
 };
 
 /**
+ * Alias for cleanupTestDb to match test imports
+ */
+export const cleanupTestData = cleanupTestDb;
+
+/**
  * Disconnect from the test database
  * Use this in afterAll hooks
  */
@@ -77,7 +82,8 @@ export const seedTestDb = async (scenario: 'minimal' | 'full' = 'minimal'): Prom
             lastActivity: new Date(),
             currentStep: 1,
             isComplete: false,
-            responses: {},
+            responses: '{}',
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours from now
           },
           {
             sessionId: 'test-session-2',
@@ -85,11 +91,12 @@ export const seedTestDb = async (scenario: 'minimal' | 'full' = 'minimal'): Prom
             lastActivity: new Date(Date.now() - 1800000), // 30 minutes ago
             currentStep: 3,
             isComplete: false,
-            responses: {
+            responses: JSON.stringify({
               value_assurance_1: 'A',
               value_assurance_2: 'B',
               customer_safe_1: 'A',
-            },
+            }),
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours from now
             firstName: 'John',
             lastName: 'Doe',
             email: 'john.doe@example.com',
@@ -101,7 +108,7 @@ export const seedTestDb = async (scenario: 'minimal' | 'full' = 'minimal'): Prom
             lastActivity: new Date(Date.now() - 3600000), // 1 hour ago
             currentStep: 4,
             isComplete: true,
-            responses: {
+            responses: JSON.stringify({
               value_assurance_1: 'A',
               value_assurance_2: 'A',
               value_assurance_3: 'B',
@@ -118,7 +125,8 @@ export const seedTestDb = async (scenario: 'minimal' | 'full' = 'minimal'): Prom
               governance_1: 'B',
               governance_2: 'A',
               governance_3: 'B',
-            },
+            }),
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours from now
             firstName: 'Jane',
             lastName: 'Smith',
             email: 'jane.smith@example.com',
@@ -131,20 +139,26 @@ export const seedTestDb = async (scenario: 'minimal' | 'full' = 'minimal'): Prom
       const assessment = await db.assessment.create({
         data: {
           sessionId: 'test-session-completed',
-          responses: {}, // Add missing required field
+          responses: JSON.stringify({
+            value_assurance_1: 'A',
+            value_assurance_2: 'A',
+            customer_safe_1: 'A',
+            risk_compliance_1: 'B',
+            governance_1: 'B',
+          }),
           totalScore: 85,
-          scoreBreakdown: {
+          scoreBreakdown: JSON.stringify({
             valueAssurance: 88,
             customerSafe: 90,
             riskCompliance: 75,
             governance: 80,
-          },
+          }),
           scoreCategory: 'leader',
-          recommendations: [
+          recommendations: JSON.stringify([
             'Continue leveraging your strong AI governance foundation',
             'Focus on expanding customer-safe AI practices across all business units',
             'Consider advanced compliance automation tools',
-          ],
+          ]),
         },
       });
 
@@ -153,23 +167,23 @@ export const seedTestDb = async (scenario: 'minimal' | 'full' = 'minimal'): Prom
         data: [
           {
             assessmentId: assessment.id,
-            payload: {
+            payload: JSON.stringify({
               firstName: 'Jane',
               lastName: 'Smith',
               email: 'jane.smith@example.com',
               company: 'Innovation Inc',
-            },
+            }),
             status: 'completed',
             retryCount: 1,
             nextRetryAt: new Date(),
           },
           {
             assessmentId: assessment.id,
-            payload: {
+            payload: JSON.stringify({
               dealName: 'AI Readiness Assessment - Innovation Inc',
               amount: 25000,
               associatedContactId: '12345',
-            },
+            }),
             status: 'completed',
             retryCount: 1,
             nextRetryAt: new Date(),
