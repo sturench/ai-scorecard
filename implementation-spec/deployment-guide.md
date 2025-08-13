@@ -7,6 +7,7 @@ Complete deployment instructions for the AI Reality Check Scorecard system. This
 ## Prerequisites
 
 ### Required Accounts
+
 - **Vercel Account**: For application hosting
 - **Supabase Account**: For PostgreSQL database
 - **HubSpot Account**: Free CRM for lead management
@@ -14,6 +15,7 @@ Complete deployment instructions for the AI Reality Check Scorecard system. This
 - **Domain**: For custom domain configuration
 
 ### Local Development Requirements
+
 - **Node.js**: Version 20.x or higher
 - **npm**: Version 10.x or higher
 - **Git**: For version control
@@ -93,6 +95,7 @@ NODE_ENV="production"
 ## Local Development Setup
 
 ### 1. Project Setup
+
 ```bash
 # Clone repository
 git clone [repository-url]
@@ -117,6 +120,7 @@ npm run dev
 ```
 
 ### 2. Database Setup (Local PostgreSQL)
+
 ```bash
 # Install PostgreSQL (macOS)
 brew install postgresql
@@ -130,6 +134,7 @@ DATABASE_URL="postgresql://[username]@localhost:5432/ai_scorecard_dev"
 ```
 
 ### 3. HubSpot Development Setup
+
 ```bash
 # Create HubSpot developer account
 # Create private app with required scopes:
@@ -147,6 +152,7 @@ HUBSPOT_ACCESS_TOKEN="pat-na1-your-dev-token"
 ### Step 1: Database Setup (Supabase)
 
 1. **Create Supabase Project**
+
    ```bash
    # Go to supabase.com
    # Create new project
@@ -154,6 +160,7 @@ HUBSPOT_ACCESS_TOKEN="pat-na1-your-dev-token"
    ```
 
 2. **Configure Database**
+
    ```sql
    -- Enable required extensions
    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -161,17 +168,19 @@ HUBSPOT_ACCESS_TOKEN="pat-na1-your-dev-token"
    ```
 
 3. **Run Migrations**
+
    ```bash
    # Set production DATABASE_URL in environment
    npx prisma migrate deploy
    ```
 
 4. **Setup Row Level Security (RLS)**
+
    ```sql
    -- Enable RLS on tables
    ALTER TABLE assessments ENABLE ROW LEVEL SECURITY;
    ALTER TABLE assessment_sessions ENABLE ROW LEVEL SECURITY;
-   
+
    -- Create policies for session-based access
    CREATE POLICY "Assessment access by session" ON assessments
      FOR ALL USING (session_id = current_setting('app.session_id')::text);
@@ -180,18 +189,20 @@ HUBSPOT_ACCESS_TOKEN="pat-na1-your-dev-token"
 ### Step 2: Vercel Deployment
 
 1. **Connect Repository to Vercel**
+
    ```bash
    # Install Vercel CLI
    npm i -g vercel
-   
+
    # Login to Vercel
    vercel login
-   
+
    # Deploy project
    vercel --prod
    ```
 
 2. **Configure Build Settings**
+
    ```json
    // vercel.json
    {
@@ -219,11 +230,12 @@ HUBSPOT_ACCESS_TOKEN="pat-na1-your-dev-token"
 ### Step 3: Domain Configuration
 
 1. **Custom Domain Setup**
+
    ```bash
    # In Vercel dashboard:
    # 1. Add custom domain: aireadycheck.com
    # 2. Configure DNS records:
-   
+
    # DNS Records:
    # A record: @ -> 76.76.19.61
    # CNAME: www -> cname.vercel-dns.com
@@ -239,10 +251,11 @@ HUBSPOT_ACCESS_TOKEN="pat-na1-your-dev-token"
 ### Step 4: Email Service Setup
 
 1. **Resend Configuration**
+
    ```bash
    # Add domain to Resend
    # Configure SPF/DKIM records:
-   
+
    # DNS Records for Email:
    # TXT @ "v=spf1 include:_spf.resend.com ~all"
    # TXT resend._domainkey "[DKIM-key-from-resend]"
@@ -257,6 +270,7 @@ HUBSPOT_ACCESS_TOKEN="pat-na1-your-dev-token"
 ### Step 5: HubSpot Production Setup
 
 1. **Create Production HubSpot App**
+
    ```bash
    # Create new private app for production
    # Use production domain in app settings
@@ -281,6 +295,7 @@ HUBSPOT_ACCESS_TOKEN="pat-na1-your-dev-token"
 ### Step 6: Analytics Setup
 
 1. **Google Analytics**
+
    ```javascript
    // Add Google Analytics 4 to Next.js
    // Configure goals and conversions
@@ -298,12 +313,14 @@ HUBSPOT_ACCESS_TOKEN="pat-na1-your-dev-token"
 ### Health Checks
 
 1. **API Health Check**
+
    ```bash
    # Automated health check endpoint
    curl https://aireadycheck.com/api/health
    ```
 
 2. **Database Connection**
+
    ```sql
    -- Monitor connection pool status
    -- Check query performance
@@ -320,6 +337,7 @@ HUBSPOT_ACCESS_TOKEN="pat-na1-your-dev-token"
 ### Backup Strategy
 
 1. **Database Backups**
+
    ```bash
    # Supabase automatic daily backups (included)
    # Weekly full backup to S3 (optional)
@@ -335,6 +353,7 @@ HUBSPOT_ACCESS_TOKEN="pat-na1-your-dev-token"
 ### Performance Monitoring
 
 1. **Core Web Vitals**
+
    ```typescript
    // Monitor LCP, FID, CLS
    // Set up alerts for performance degradation
@@ -352,6 +371,7 @@ HUBSPOT_ACCESS_TOKEN="pat-na1-your-dev-token"
 ### Common Issues
 
 1. **Database Connection Errors**
+
    ```bash
    # Check DATABASE_URL format
    # Verify Supabase project status
@@ -359,6 +379,7 @@ HUBSPOT_ACCESS_TOKEN="pat-na1-your-dev-token"
    ```
 
 2. **HubSpot Integration Issues**
+
    ```bash
    # Verify access token validity
    # Check rate limiting
@@ -366,6 +387,7 @@ HUBSPOT_ACCESS_TOKEN="pat-na1-your-dev-token"
    ```
 
 3. **Email Delivery Problems**
+
    ```bash
    # Check Resend account status
    # Verify DNS records
@@ -385,7 +407,7 @@ HUBSPOT_ACCESS_TOKEN="pat-na1-your-dev-token"
 # Check environment variables
 vercel env ls
 
-# View deployment logs  
+# View deployment logs
 vercel logs [deployment-url]
 
 # Test database connection
@@ -400,6 +422,7 @@ curl -X POST https://aireadycheck.com/api/assessment/start \
 ## Security Checklist
 
 ### Pre-Deployment Security
+
 - [ ] Environment variables secured (no secrets in code)
 - [ ] Database connections use SSL
 - [ ] API endpoints have proper authentication
@@ -410,6 +433,7 @@ curl -X POST https://aireadycheck.com/api/assessment/start \
 - [ ] XSS prevention (React default behavior)
 
 ### Post-Deployment Security
+
 - [ ] SSL certificate active
 - [ ] Security headers configured
 - [ ] Access logs monitored
@@ -421,6 +445,7 @@ curl -X POST https://aireadycheck.com/api/assessment/start \
 ## Performance Optimization
 
 ### Pre-Deployment
+
 - [ ] Image optimization enabled
 - [ ] Code splitting implemented
 - [ ] Bundle size analyzed
@@ -428,6 +453,7 @@ curl -X POST https://aireadycheck.com/api/assessment/start \
 - [ ] Caching strategy implemented
 
 ### Post-Deployment
+
 - [ ] CDN performance verified
 - [ ] Core Web Vitals < target thresholds
 - [ ] API response times < 500ms
@@ -437,6 +463,7 @@ curl -X POST https://aireadycheck.com/api/assessment/start \
 ## Rollback Procedure
 
 ### Emergency Rollback
+
 ```bash
 # Immediate rollback to previous deployment
 vercel rollback [previous-deployment-url]
@@ -447,6 +474,7 @@ npx prisma migrate deploy
 ```
 
 ### Planned Rollback
+
 ```bash
 # Create rollback branch
 git checkout -b rollback-to-v1.0
@@ -462,6 +490,7 @@ vercel --prod
 ## Deployment Checklist
 
 ### Pre-Deployment
+
 - [ ] All environment variables configured
 - [ ] Database migrations tested
 - [ ] HubSpot integration verified
@@ -472,6 +501,7 @@ vercel --prod
 - [ ] Performance optimized
 
 ### Deployment
+
 - [ ] Production database setup
 - [ ] Vercel deployment successful
 - [ ] Custom domain configured
@@ -480,6 +510,7 @@ vercel --prod
 - [ ] Email delivery working
 
 ### Post-Deployment
+
 - [ ] Health checks passing
 - [ ] Analytics tracking
 - [ ] HubSpot sync working
@@ -490,5 +521,5 @@ vercel --prod
 
 ---
 
-*Last Updated: 2025-08-12*  
-*Status: Complete deployment guide ready for production*
+_Last Updated: 2025-08-12_  
+_Status: Complete deployment guide ready for production_

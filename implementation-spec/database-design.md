@@ -32,21 +32,21 @@ CREATE TABLE assessments (
   -- Core identifiers
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   session_id VARCHAR(255) UNIQUE NOT NULL, -- For resuming incomplete assessments
-  
+
   -- Assessment data
   responses JSONB NOT NULL, -- {"q1": "A", "q2": "B", "value_assurance_1": "C", ...}
   total_score INTEGER, -- 0-100 overall score
   score_breakdown JSONB, -- {"value_assurance": 75, "customer_safe": 80, "risk_compliance": 60, "governance": 55}
   score_category VARCHAR(50), -- 'champion', 'builder', 'risk_zone', 'alert', 'crisis'
   recommendations TEXT[], -- Array of recommendation strings
-  
+
   -- User data (scrubbed after 30 days)
   email VARCHAR(255), -- Optional, scrubbed after 30 days
   first_name VARCHAR(255), -- Optional, scrubbed after 30 days
   last_name VARCHAR(255), -- Optional, scrubbed after 30 days
   company VARCHAR(255), -- Optional, scrubbed after 30 days
   phone VARCHAR(255), -- Optional, scrubbed after 30 days
-  
+
   -- HubSpot integration tracking
   hubspot_sync_status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'synced', 'failed', 'skipped'
   hubspot_sync_attempts INTEGER DEFAULT 0,
@@ -54,26 +54,26 @@ CREATE TABLE assessments (
   hubspot_deal_id VARCHAR(255), -- HubSpot deal ID if executive briefing qualified
   hubspot_sync_error TEXT, -- Last error message if failed
   hubspot_synced_at TIMESTAMP,
-  
+
   -- Email delivery tracking
   email_delivery_status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'sent', 'failed', 'skipped'
   email_delivery_attempts INTEGER DEFAULT 0,
   email_delivered_at TIMESTAMP,
   email_delivery_error TEXT,
-  
+
   -- Timestamps
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   completed_at TIMESTAMP, -- NULL if incomplete
   email_scrubbed_at TIMESTAMP, -- When PII was removed
-  
+
   -- Analytics fields (preserved after email scrub)
   completion_time_seconds INTEGER, -- Time to complete assessment
   browser_info JSONB, -- {"browser": "Chrome", "version": "91", "device": "desktop", "os": "macOS"}
   referrer_source VARCHAR(255), -- Where user came from
   ab_test_variant VARCHAR(50), -- For A/B testing tracking
   ip_address_hash VARCHAR(64), -- Hashed IP for analytics (no raw IP stored)
-  
+
   -- Lead quality scoring
   lead_quality VARCHAR(50) DEFAULT 'basic', -- 'basic', 'enhanced', 'executive_briefing_qualified'
   qualified_for_briefing BOOLEAN DEFAULT FALSE
@@ -86,17 +86,17 @@ CREATE INDEX idx_assessments_created_at ON assessments(created_at);
 CREATE INDEX idx_assessments_completed ON assessments(completed_at) WHERE completed_at IS NOT NULL;
 
 -- HubSpot sync indexes
-CREATE INDEX idx_assessments_hubspot_sync ON assessments(hubspot_sync_status) 
+CREATE INDEX idx_assessments_hubspot_sync ON assessments(hubspot_sync_status)
   WHERE hubspot_sync_status IN ('pending', 'failed');
 CREATE INDEX idx_assessments_hubspot_retry ON assessments(hubspot_sync_status, hubspot_sync_attempts, created_at)
   WHERE hubspot_sync_status = 'failed' AND hubspot_sync_attempts < 5;
 
--- Email delivery indexes  
+-- Email delivery indexes
 CREATE INDEX idx_assessments_email_delivery ON assessments(email_delivery_status)
   WHERE email_delivery_status IN ('pending', 'failed');
 
 -- Privacy compliance indexes
-CREATE INDEX idx_assessments_email_scrub ON assessments(created_at) 
+CREATE INDEX idx_assessments_email_scrub ON assessments(created_at)
   WHERE email IS NOT NULL AND email_scrubbed_at IS NULL;
 
 -- Analytics indexes (for preserved data)
@@ -115,20 +115,20 @@ CREATE TABLE assessment_sessions (
   current_step INTEGER DEFAULT 0, -- Current step index (0-based)
   total_steps INTEGER DEFAULT 4, -- Always 4 for current assessment
   responses JSONB DEFAULT '{}', -- Responses saved so far
-  
+
   -- Progressive data capture
   email VARCHAR(255),
   first_name VARCHAR(255),
-  last_name VARCHAR(255), 
+  last_name VARCHAR(255),
   company VARCHAR(255),
   phone VARCHAR(255),
-  
+
   -- Session metadata
   ip_address_hash VARCHAR(64), -- Hashed IP for rate limiting
   user_agent TEXT,
   referrer_source VARCHAR(255),
   ab_test_variant VARCHAR(50),
-  
+
   -- Timestamps
   started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -149,22 +149,22 @@ Managing failed HubSpot syncs with retry logic.
 CREATE TABLE hubspot_sync_queue (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   assessment_id UUID REFERENCES assessments(id) ON DELETE CASCADE,
-  
+
   -- Sync data
   payload JSONB NOT NULL, -- Complete data to sync to HubSpot
   sync_type VARCHAR(50) NOT NULL, -- 'contact', 'deal', 'contact_and_deal'
-  
+
   -- Retry logic
   retry_count INTEGER DEFAULT 0,
   max_retries INTEGER DEFAULT 5,
   next_retry_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   retry_delay_seconds INTEGER DEFAULT 60, -- Current delay between retries
-  
+
   -- Tracking
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   last_attempt_at TIMESTAMP,
   last_error TEXT,
-  
+
   -- Success tracking
   completed_at TIMESTAMP,
   hubspot_contact_id VARCHAR(255),
@@ -188,25 +188,25 @@ If implementing advanced email automation beyond basic results delivery.
 CREATE TABLE email_queue (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   assessment_id UUID REFERENCES assessments(id) ON DELETE CASCADE,
-  
+
   -- Email details
   recipient_email VARCHAR(255) NOT NULL,
   template_name VARCHAR(100) NOT NULL, -- 'assessment_results', 'incomplete_followup', etc.
   template_data JSONB NOT NULL, -- Data for email template
-  
+
   -- Scheduling
   scheduled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   sent_at TIMESTAMP,
-  
+
   -- Retry logic
   retry_count INTEGER DEFAULT 0,
   max_retries INTEGER DEFAULT 3,
   next_retry_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  
+
   -- Tracking
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   last_error TEXT,
-  
+
   -- Email service response
   email_service_id VARCHAR(255), -- Resend/SendGrid message ID
   delivery_status VARCHAR(50) DEFAULT 'pending' -- 'pending', 'sent', 'delivered', 'bounced', 'failed'
@@ -222,10 +222,11 @@ CREATE INDEX idx_email_queue_assessment ON email_queue(assessment_id);
 ### JSONB Field Structures
 
 #### Assessment Responses
+
 ```json
 {
   "value_assurance_1": "A",
-  "value_assurance_2": "B", 
+  "value_assurance_2": "B",
   "value_assurance_3": "C",
   "value_assurance_4": "A",
   "customer_safe_1": "B",
@@ -235,7 +236,7 @@ CREATE INDEX idx_email_queue_assessment ON email_queue(assessment_id);
   "risk_compliance_1": "C",
   "risk_compliance_2": "B",
   "risk_compliance_3": "A",
-  "risk_compliance_4": "C", 
+  "risk_compliance_4": "C",
   "governance_1": "B",
   "governance_2": "A",
   "governance_3": "C",
@@ -244,21 +245,23 @@ CREATE INDEX idx_email_queue_assessment ON email_queue(assessment_id);
 ```
 
 #### Score Breakdown
+
 ```json
 {
-  "value_assurance": 75,    // 0-100, weighted 25%
-  "customer_safe": 80,      // 0-100, weighted 35%
-  "risk_compliance": 60,    // 0-100, weighted 25%
-  "governance": 55          // 0-100, weighted 15%
+  "value_assurance": 75, // 0-100, weighted 25%
+  "customer_safe": 80, // 0-100, weighted 35%
+  "risk_compliance": 60, // 0-100, weighted 25%
+  "governance": 55 // 0-100, weighted 15%
 }
 ```
 
 #### Browser Info
+
 ```json
 {
   "browser": "Chrome",
   "version": "91.0.4472.124",
-  "device": "desktop",      // "desktop", "mobile", "tablet"
+  "device": "desktop", // "desktop", "mobile", "tablet"
   "os": "macOS",
   "viewport": {
     "width": 1920,
@@ -272,13 +275,13 @@ CREATE INDEX idx_email_queue_assessment ON email_queue(assessment_id);
 
 ```sql
 -- Add check constraints for enum-like fields
-ALTER TABLE assessments ADD CONSTRAINT chk_score_category 
+ALTER TABLE assessments ADD CONSTRAINT chk_score_category
   CHECK (score_category IN ('champion', 'builder', 'risk_zone', 'alert', 'crisis'));
 
 ALTER TABLE assessments ADD CONSTRAINT chk_hubspot_sync_status
   CHECK (hubspot_sync_status IN ('pending', 'synced', 'failed', 'skipped'));
 
-ALTER TABLE assessments ADD CONSTRAINT chk_email_delivery_status  
+ALTER TABLE assessments ADD CONSTRAINT chk_email_delivery_status
   CHECK (email_delivery_status IN ('pending', 'sent', 'failed', 'skipped'));
 
 ALTER TABLE assessments ADD CONSTRAINT chk_lead_quality
@@ -304,27 +307,27 @@ RETURNS INTEGER AS $$
 DECLARE
   scrubbed_count INTEGER;
 BEGIN
-  UPDATE assessments 
-  SET 
+  UPDATE assessments
+  SET
     email = NULL,
     first_name = NULL,
     last_name = NULL,
     company = NULL,
     phone = NULL,
     email_scrubbed_at = CURRENT_TIMESTAMP
-  WHERE 
+  WHERE
     created_at < CURRENT_TIMESTAMP - INTERVAL '30 days'
     AND email IS NOT NULL
     AND email_scrubbed_at IS NULL;
-    
+
   GET DIAGNOSTICS scrubbed_count = ROW_COUNT;
-  
+
   -- Log the scrubbing event
   INSERT INTO system_logs (event_type, message, data, created_at)
-  VALUES ('email_scrub', 'Automated email scrubbing completed', 
-          json_build_object('records_scrubbed', scrubbed_count), 
+  VALUES ('email_scrub', 'Automated email scrubbing completed',
+          json_build_object('records_scrubbed', scrubbed_count),
           CURRENT_TIMESTAMP);
-          
+
   RETURN scrubbed_count;
 END;
 $$ LANGUAGE plpgsql;
@@ -349,21 +352,21 @@ DECLARE
   queue_count INTEGER;
 BEGIN
   -- Delete old assessment sessions first
-  DELETE FROM assessment_sessions 
+  DELETE FROM assessment_sessions
   WHERE started_at < CURRENT_TIMESTAMP - INTERVAL (older_than_days || ' days');
   GET DIAGNOSTICS session_count = ROW_COUNT;
-  
+
   -- Delete related queue items (will cascade from assessments)
-  SELECT COUNT(*) INTO queue_count 
+  SELECT COUNT(*) INTO queue_count
   FROM hubspot_sync_queue hsq
   JOIN assessments a ON hsq.assessment_id = a.id
   WHERE a.created_at < CURRENT_TIMESTAMP - INTERVAL (older_than_days || ' days');
-  
+
   -- Delete old assessments (cascades to queue items)
-  DELETE FROM assessments 
+  DELETE FROM assessments
   WHERE created_at < CURRENT_TIMESTAMP - INTERVAL (older_than_days || ' days');
   GET DIAGNOSTICS assessment_count = ROW_COUNT;
-  
+
   RETURN QUERY SELECT assessment_count, session_count, queue_count;
 END;
 $$ LANGUAGE plpgsql;
@@ -380,9 +383,9 @@ RETURNS INTEGER AS $$
 DECLARE
   cleaned_count INTEGER;
 BEGIN
-  DELETE FROM assessment_sessions 
+  DELETE FROM assessment_sessions
   WHERE expires_at < CURRENT_TIMESTAMP;
-  
+
   GET DIAGNOSTICS cleaned_count = ROW_COUNT;
   RETURN cleaned_count;
 END;
@@ -451,7 +454,7 @@ CREATE TRIGGER hubspot_retry_delay
 
 ```sql
 -- Monthly assessment completion stats
-SELECT 
+SELECT
   DATE_TRUNC('month', created_at) as month,
   COUNT(*) as total_started,
   COUNT(completed_at) as total_completed,
@@ -464,7 +467,7 @@ GROUP BY DATE_TRUNC('month', created_at)
 ORDER BY month DESC;
 
 -- Score distribution analysis
-SELECT 
+SELECT
   score_category,
   COUNT(*) as count,
   ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 2) as percentage,
@@ -478,7 +481,7 @@ GROUP BY score_category
 ORDER BY avg_score DESC;
 
 -- Lead quality funnel
-SELECT 
+SELECT
   lead_quality,
   COUNT(*) as leads,
   COUNT(CASE WHEN email IS NOT NULL THEN 1 END) as with_email,
@@ -488,8 +491,8 @@ FROM assessments
 WHERE completed_at IS NOT NULL
   AND created_at >= CURRENT_DATE - INTERVAL '30 days'
 GROUP BY lead_quality
-ORDER BY 
-  CASE lead_quality 
+ORDER BY
+  CASE lead_quality
     WHEN 'executive_briefing_qualified' THEN 3
     WHEN 'enhanced' THEN 2
     WHEN 'basic' THEN 1
@@ -500,7 +503,7 @@ ORDER BY
 
 ```sql
 -- HubSpot sync success rates
-SELECT 
+SELECT
   DATE_TRUNC('day', created_at) as sync_date,
   COUNT(*) as total_attempts,
   COUNT(CASE WHEN hubspot_sync_status = 'synced' THEN 1 END) as successful,
@@ -513,7 +516,7 @@ GROUP BY DATE_TRUNC('day', created_at)
 ORDER BY sync_date DESC;
 
 -- Failed syncs requiring attention
-SELECT 
+SELECT
   a.id,
   a.email,
   a.company,
@@ -528,7 +531,7 @@ WHERE a.hubspot_sync_status = 'failed'
 ORDER BY a.created_at DESC;
 
 -- Retry queue status
-SELECT 
+SELECT
   sync_type,
   COUNT(*) as pending_items,
   MIN(next_retry_at) as next_retry,
@@ -542,7 +545,7 @@ GROUP BY sync_type;
 
 ```sql
 -- Assessment completion time analysis
-SELECT 
+SELECT
   score_category,
   COUNT(*) as assessments,
   ROUND(AVG(completion_time_seconds), 0) as avg_seconds,
@@ -557,12 +560,12 @@ GROUP BY score_category
 ORDER BY avg_seconds;
 
 -- Database table sizes and growth
-SELECT 
+SELECT
   schemaname,
   tablename,
   pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as table_size,
   pg_total_relation_size(schemaname||'.'||tablename) as bytes
-FROM pg_tables 
+FROM pg_tables
 WHERE schemaname = 'public'
 ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
 ```
@@ -578,7 +581,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto"; -- For password hashing if needed
 
 -- Create tables (in order of dependencies)
 -- assessment_sessions (no dependencies)
--- assessments (no dependencies)  
+-- assessments (no dependencies)
 -- hubspot_sync_queue (depends on assessments)
 -- email_queue (depends on assessments)
 
@@ -604,7 +607,7 @@ INSERT INTO system_settings (key, value) VALUES
   ('email_delivery_enabled', 'false'), -- Disable emails in dev
   ('debug_logging_enabled', 'true');
 
--- Production environment  
+-- Production environment
 INSERT INTO system_settings (key, value) VALUES
   ('hubspot_sync_enabled', 'true'),
   ('email_delivery_enabled', 'true'),
@@ -614,25 +617,30 @@ INSERT INTO system_settings (key, value) VALUES
 ## Database Provider Recommendations
 
 ### Primary Recommendation: Supabase
+
 - **Pros:** Built on PostgreSQL, automatic backups, built-in cron jobs, row-level security, free tier sufficient for MVP
 - **Connection:** Direct Prisma connection via DATABASE_URL
 - **Cron Jobs:** Built-in for automated maintenance
 - **Scaling:** Automatic with usage-based pricing
 
 ### Alternative: Neon
+
 - **Pros:** Serverless PostgreSQL, auto-scaling, branching for dev/staging, excellent Vercel integration
 - **Connection:** Connection pooling built-in
 - **Branching:** Separate databases for development/staging
 - **Scaling:** Transparent auto-scaling
 
 ### Alternative: Railway PostgreSQL
+
 - **Pros:** Simple setup, good performance, automatic backups
 - **Connection:** Direct DATABASE_URL
 - **Management:** Web-based admin interface
 - **Pricing:** Predictable monthly pricing
 
 ### Self-Hosted Considerations
+
 Only recommended if you have specific compliance requirements:
+
 - **Setup:** Docker Compose with PostgreSQL + Redis
 - **Backups:** Manual setup required (pg_dump + AWS S3)
 - **Monitoring:** Manual setup (Prometheus + Grafana)
@@ -641,6 +649,7 @@ Only recommended if you have specific compliance requirements:
 ## Performance Optimization
 
 ### Connection Pooling with Prisma
+
 ```typescript
 // prisma/client.ts
 import { PrismaClient } from '@prisma/client';
@@ -649,19 +658,22 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL
-    }
-  },
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error']
-});
+export const prisma =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
+      },
+    },
+    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+  });
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 ```
 
 ### Query Optimization Tips
+
 1. **Use Indexes:** All WHERE, ORDER BY, and JOIN columns should be indexed
 2. **Limit Results:** Always use LIMIT for large tables
 3. **JSON Queries:** Use JSONB operators efficiently: `responses->>'value_assurance_1'`
@@ -671,12 +683,14 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 ## Backup & Recovery Strategy
 
 ### Automated Backups
+
 - **Frequency:** Daily incremental, weekly full backup
 - **Retention:** 30 days for daily, 12 weeks for weekly
 - **Testing:** Monthly backup restoration tests
 - **Storage:** Encrypted, geographically distributed
 
 ### Point-in-Time Recovery
+
 - **Window:** 7-day point-in-time recovery capability
 - **Process:** Automated via database provider
 - **Testing:** Quarterly recovery drills

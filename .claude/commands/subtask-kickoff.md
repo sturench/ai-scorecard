@@ -1,17 +1,21 @@
 # Subtask Kickoff Procedure
 
 ## Usage
+
 To invoke this slash command:
+
 ```
 /subtask-kickoff 123.1
 ```
 
 ## Purpose
+
 This procedure ensures consistent, focused execution of subtasks (format: 123.1) by establishing context, defining scope, and maintaining clear communication throughout the work.
 
 ## 🚨DO NOT FORGET TO USE THE AVAILABLE SUBAGENTS TO DO THE WORK!! THERE ARE SPECIALISTS AVAILABLE TO YOU
 
 ## Task ID Processing
+
 - **Subtask ID**: {0} (e.g., 123.1)
 - **Parent Task ID**: Derive from {0} by removing everything after the dot (e.g., 123.1 → 123)
 - **Task Type**: Subtask (contains a dot in the ID)
@@ -19,14 +23,16 @@ This procedure ensures consistent, focused execution of subtasks (format: 123.1)
 ## Pre-Flight Checklist
 
 1. **Verify Task Type**
+
    ```
    tm show {0}
    ```
+
    - **If task format is 123.1**: Continue with this procedure
    - **If task format is 123 (no decimal)**:
      - Check for subtasks: `tm show {0}`
      - **If subtasks exist**: Ask user which subtask to work on
-     - **If no subtasks exist**: 
+     - **If no subtasks exist**:
        ```
        This task has no subtasks. Should I:
        a) Break it down into subtasks first (I can follow the @docs/claude/workflows/taskmaster-kickoff.md procedure)
@@ -35,10 +41,12 @@ This procedure ensures consistent, focused execution of subtasks (format: 123.1)
        **⚠️ STOP AND WAIT** - Only proceed with option (b) if user explicitly confirms
 
 2. **Understand Task Hierarchy**
+
    ```
    tm show <PARENT_TASK_ID>  # Derive parent ID from {0} (e.g., 123.1 → 123)
    tm list --with-subtasks
    ```
+
    - Review all sibling subtasks for task {0}
    - Understand how this subtask fits into the parent task
    - Note any dependencies or order requirements
@@ -46,17 +54,21 @@ This procedure ensures consistent, focused execution of subtasks (format: 123.1)
    - **Look for existing analysis documents** that this subtask should reference or maintain
 
 3. **Verify Working Directory**
+
    ```
    pwd
    ```
+
    - **If not at project root**: `cd` to the correct location
    - Remember: `tm` commands must be run from project root
 
 4. **Check Git State**
+
    ```
    git status
    git branch --show-current
    ```
+
    - Note current branch
    - Ensure working directory is clean
    - **If uncommitted changes exist**: Ask user how to proceed
@@ -68,17 +80,21 @@ This procedure ensures consistent, focused execution of subtasks (format: 123.1)
      - **If feature work**: Focus on coding standards and architecture
    - Check for other relevant docs: @README.md, @CONTRIBUTING.md, `.github/` guidelines
    - **Check parent task for documentation requirements**:
+
      ```
      tm show <PARENT_TASK_ID>  # Derive parent ID from {0} (e.g., 123.1 → 123)
      ```
+
      - Look for references to specific documentation files
      - Note any cross-subtask update requirements
      - Check if parent task has established documentation workflows
+
    - Note any project-specific commands or workflows
 
 ## Research Phase - Intelligent Agent Handoff
 
 ### Phase Selection Based on Task Type
+
 **Evaluate the subtask type and determine the most appropriate approach:**
 
 1. **Complex Research-Heavy Tasks**: Use @research-analyst agent
@@ -115,6 +131,7 @@ This procedure ensures consistent, focused execution of subtasks (format: 123.1)
    - Minor updates and fixes
 
 ### Agent Handoff Decision
+
 ```
 Task Analysis for {0}:
 - **Task Type**: [Research/Architecture/Debug/Documentation/Standard Implementation]
@@ -130,6 +147,7 @@ a) Hand off to the specialized agent (recommended for complex tasks)
 b) Continue with the standard workflow
 c) Get more details before deciding
 ```
+
 **⚠️ STOP AND WAIT for user decision on approach**
 
 ### Standard Research Workflow (if not handed off)
@@ -156,14 +174,16 @@ c) Get more details before deciding
      ```
 
 3. **Research Confirmation**
+
    ```
    Based on my research, I found:
    - [Key technical finding 1]
    - [Key technical finding 2]
    - [Important constraint or dependency]
-   
+
    Should I proceed with analysis based on these findings, or would you like me to investigate any specific areas further?
    ```
+
    **⚠️ STOP AND WAIT for user confirmation on research direction**
 
 4. **Identify Constraints**
@@ -175,58 +195,63 @@ c) Get more details before deciding
 ## Planning Phase
 
 1. **Define Scope Explicitly**
+
    ```
    Based on my research, here's what I understand subtask {0} includes:
    - [Specific deliverable 1]
    - [Specific deliverable 2]
-   
+
    Out of scope:
    - [Related but separate concern 1]
    - [Future enhancement 2]
-   
+
    Documentation requirements (if any):
    - [Reference/update specific documentation files]
    - [Cross-subtask updates needed]
-   
+
    Is this understanding correct?
    ```
+
    **⚠️ STOP AND WAIT for user confirmation before proceeding**
 
 2. **Branch Strategy**
-   - **If user hasn't specified**: 
+   - **If user hasn't specified**:
      ```
      Should I create a new feature branch for this work, or work on the current branch?
      ```
      **⚠️ STOP AND WAIT for user response**
-   - **If new branch needed**: 
+   - **If new branch needed**:
      ```
      git checkout -b feature/task-{0}-<brief-description>
      ```
 
 3. **Propose Approach**
+
    ```
    Here's my planned approach for subtask {0}:
-   
+
    1. [First major step]
       - Validation: [How we'll know this succeeded]
    2. [Second major step]
       - Validation: [How we'll know this succeeded]
    3. [Third major step]
       - Validation: [How we'll know this succeeded]
-   
+
    Cross-subtask updates planned:
    - [Related subtask]: [What information will be shared]
    - [Another subtask]: [What updates will be made]
-   
+
    Estimated checkpoints:
    - After step 1: Review [specific aspect]
    - After step 2: Test [specific functionality]
-   
+
    Does this approach look good?
    ```
+
    **⚠️ STOP AND WAIT for user approval before starting execution**
 
 4. **Create Parking Lot**
+
    ```
    I'll track any discoveries that are out of scope in @PARKING_LOT.md:
    - [ ] (Items will be added here during execution)
@@ -297,12 +322,13 @@ c) Get more details before deciding
 
 5. **Regular Check-ins**
    - **After significant progress**:
+
      ```
      Progress update on subtask {0}:
      ✓ Completed: [what's done]
      → Current: [what I'm working on]
      ⧖ Next: [what's coming up]
-     
+
      Any concerns or adjustments needed?
      ```
 
@@ -311,7 +337,7 @@ c) Get more details before deciding
      1. Document what went wrong
      2. Explain why it likely failed
      3. Propose fix approach
-     4. **After 2-3 failed attempts**: 
+     4. **After 2-3 failed attempts**:
         ```
         I've tried [approaches] but am still encountering [issue] in subtask {0}.
         Would you like me to:
@@ -334,37 +360,40 @@ c) Get more details before deciding
    - LEFT EMPTY INTENTIONALLY FOR NOW
 
 3. **User Confirmation with Quality Options**
+
    ```
    I believe subtask {0} is complete. Here's what was accomplished:
-   
+
    ✓ [Deliverable 1] - [brief validation]
    ✓ [Deliverable 2] - [brief validation]
-   
+
    Documentation updated:
    - [Document 1]: [what was added/changed]
    - [Document 2]: [what was added/changed]
-   
+
    Cross-subtask updates completed:
    - [Related subtask]: [information shared]
    - [Another subtask]: [updates made]
-   
+
    Testing performed:
    - [Test type 1]: [result]
    - [Test type 2]: [result]
-   
+
    Quality Assurance Options:
    a) **Basic review**: Review the changes in detail yourself
    b) **Enhanced testing**: Run additional tests and validation
    c) **Comprehensive QA**: Use @quality-assurance-coordinator for multi-expert review (recommended for complex/critical changes)
    d) **Standard completion**: Consider this complete and move on
-   
+
    Which quality assurance approach would you prefer?
    ```
+
    **⚠️ STOP AND WAIT for user decision**
 
 ## Handoff Phase
 
 1. **Document Work**
+
    ```
    Summary for subtask {0}:
    - Implemented: [concise list]
@@ -390,15 +419,17 @@ c) Get more details before deciding
      cat PARKING_LOT.md
      ```
    - **If items exist**:
+
      ```
      During work on subtask {0}, I noted these items for potential future tasks:
      [Contents of @PARKING_LOT.md]
-     
+
      Would you like me to:
      a) Create tasks for any of these items
      b) Keep the file for later review
      c) Remove the file (items will be lost)
      ```
+
    - **If user chooses (a) - Create tasks**:
      ```
      For each item, should I create:

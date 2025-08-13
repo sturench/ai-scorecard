@@ -7,6 +7,7 @@ RESTful API design with session-based authentication for the AI Reality Check Sc
 ## Authentication & Security
 
 ### Session Management
+
 - **Session Creation:** Automatic on first API call
 - **Session Storage:** Secure HTTP-only cookies
 - **Session Duration:** 24 hours with activity extension
@@ -14,7 +15,9 @@ RESTful API design with session-based authentication for the AI Reality Check Sc
 - **Rate Limiting:** 10 assessments per hour per IP address
 
 ### Security Headers
+
 All responses include these security headers:
+
 ```
 X-Frame-Options: DENY
 X-Content-Type-Options: nosniff
@@ -24,6 +27,7 @@ Content-Security-Policy: default-src 'self'
 ```
 
 ## Base URL
+
 ```
 Production: https://aireadycheck.com/api
 Development: http://localhost:3000/api
@@ -38,31 +42,34 @@ Development: http://localhost:3000/api
 **Purpose:** Initialize a new assessment session with optional email capture
 
 **Request:**
+
 ```typescript
 interface StartAssessmentRequest {
-  email?: string;           // Optional email for follow-up
-  company?: string;         // Optional company name
-  referrer?: string;        // Where user came from
+  email?: string; // Optional email for follow-up
+  company?: string; // Optional company name
+  referrer?: string; // Where user came from
   browserInfo?: {
     userAgent: string;
-    viewport: { width: number; height: number; };
+    viewport: { width: number; height: number };
   };
 }
 ```
 
 **Response:**
+
 ```typescript
 interface StartAssessmentResponse {
-  sessionId: string;        // Session identifier
-  assessmentId: string;     // Assessment record ID
-  currentStep: number;      // Always 0 for new assessment
-  totalSteps: number;       // Always 4
-  expiresAt: string;        // ISO timestamp (24 hours from now)
-  resumeUrl: string;        // URL to resume assessment
+  sessionId: string; // Session identifier
+  assessmentId: string; // Assessment record ID
+  currentStep: number; // Always 0 for new assessment
+  totalSteps: number; // Always 4
+  expiresAt: string; // ISO timestamp (24 hours from now)
+  resumeUrl: string; // URL to resume assessment
 }
 ```
 
 **Example Request:**
+
 ```bash
 curl -X POST /api/assessment/start \
   -H "Content-Type: application/json" \
@@ -78,6 +85,7 @@ curl -X POST /api/assessment/start \
 ```
 
 **Example Response:**
+
 ```json
 {
   "sessionId": "sess_abc123def456",
@@ -90,6 +98,7 @@ curl -X POST /api/assessment/start \
 ```
 
 **Status Codes:**
+
 - `200`: Assessment started successfully
 - `400`: Invalid request data
 - `429`: Rate limit exceeded (10 per hour)
@@ -104,34 +113,38 @@ curl -X POST /api/assessment/start \
 **Purpose:** Save current step responses and update session state
 
 **Request:**
+
 ```typescript
 interface SaveProgressRequest {
-  step: number;             // Current step (0-3, 0-indexed)
-  responses: {              // Answers for current step
+  step: number; // Current step (0-3, 0-indexed)
+  responses: {
+    // Answers for current step
     [questionId: string]: string; // Question ID -> Answer choice (A, B, C, D, E)
   };
-  email?: string;           // Optional email if captured on this step
-  timeSpent?: number;       // Seconds spent on this step
+  email?: string; // Optional email if captured on this step
+  timeSpent?: number; // Seconds spent on this step
 }
 ```
 
 **Response:**
+
 ```typescript
 interface SaveProgressResponse {
-  saved: boolean;           // Always true if successful
-  currentStep: number;      // Updated current step
-  nextStep: number | null;  // Next step number or null if complete
-  canProceed: boolean;      // Whether all required questions answered
+  saved: boolean; // Always true if successful
+  currentStep: number; // Updated current step
+  nextStep: number | null; // Next step number or null if complete
+  canProceed: boolean; // Whether all required questions answered
   progress: {
-    completed: number;      // Steps completed
-    total: number;          // Total steps
-    percentage: number;     // Completion percentage
+    completed: number; // Steps completed
+    total: number; // Total steps
+    percentage: number; // Completion percentage
   };
   validationErrors?: string[];
 }
 ```
 
 **Example Request:**
+
 ```bash
 curl -X POST /api/assessment/save-progress \
   -H "Content-Type: application/json" \
@@ -140,7 +153,7 @@ curl -X POST /api/assessment/save-progress \
     "step": 0,
     "responses": {
       "value_assurance_1": "A",
-      "value_assurance_2": "B", 
+      "value_assurance_2": "B",
       "value_assurance_3": "C",
       "value_assurance_4": "A"
     },
@@ -150,6 +163,7 @@ curl -X POST /api/assessment/save-progress \
 ```
 
 **Example Response:**
+
 ```json
 {
   "saved": true,
@@ -165,6 +179,7 @@ curl -X POST /api/assessment/save-progress \
 ```
 
 **Status Codes:**
+
 - `200`: Progress saved successfully
 - `400`: Invalid step or responses data
 - `401`: Invalid or expired session
@@ -181,35 +196,39 @@ curl -X POST /api/assessment/save-progress \
 **Purpose:** Complete assessment, calculate scores, and trigger HubSpot sync
 
 **Request:**
+
 ```typescript
 interface SubmitAssessmentRequest {
-  finalResponses?: {        // Any final answer changes
+  finalResponses?: {
+    // Any final answer changes
     [questionId: string]: string;
   };
-  completionTime: number;   // Total time in seconds
-  contactInfo?: {           // Progressive data capture
+  completionTime: number; // Total time in seconds
+  contactInfo?: {
+    // Progressive data capture
     firstName?: string;
     lastName?: string;
     company?: string;
     phone?: string;
   };
-  feedback?: string;        // Optional user feedback
+  feedback?: string; // Optional user feedback
 }
 ```
 
 **Response:**
+
 ```typescript
 interface SubmitAssessmentResponse {
   assessmentId: string;
-  completed: boolean;       // Always true if successful
-  totalScore: number;       // 0-100 overall score
+  completed: boolean; // Always true if successful
+  totalScore: number; // 0-100 overall score
   scoreBreakdown: {
     valueAssurance: number; // 0-100, weighted 25%
-    customerSafe: number;   // 0-100, weighted 35%
+    customerSafe: number; // 0-100, weighted 35%
     riskCompliance: number; // 0-100, weighted 25%
-    governance: number;     // 0-100, weighted 15%
+    governance: number; // 0-100, weighted 15%
   };
-  scoreCategory: string;    // 'champion' | 'builder' | 'risk_zone' | 'alert' | 'crisis'
+  scoreCategory: string; // 'champion' | 'builder' | 'risk_zone' | 'alert' | 'crisis'
   categoryDescription: string;
   recommendations: Array<{
     category: string;
@@ -218,7 +237,7 @@ interface SubmitAssessmentResponse {
     description: string;
     actionItems: string[];
   }>;
-  resultsUrl: string;       // URL to view detailed results
+  resultsUrl: string; // URL to view detailed results
   hubspotSyncStatus: 'synced' | 'pending' | 'failed' | 'skipped';
   emailDeliveryStatus: 'sent' | 'pending' | 'failed' | 'skipped';
   qualifiedForBriefing: boolean;
@@ -226,6 +245,7 @@ interface SubmitAssessmentResponse {
 ```
 
 **Example Request:**
+
 ```bash
 curl -X POST /api/assessment/submit \
   -H "Content-Type: application/json" \
@@ -234,7 +254,7 @@ curl -X POST /api/assessment/submit \
     "completionTime": 480,
     "contactInfo": {
       "firstName": "John",
-      "lastName": "Doe", 
+      "lastName": "Doe",
       "company": "Acme Corp",
       "phone": "+1-555-123-4567"
     },
@@ -243,6 +263,7 @@ curl -X POST /api/assessment/submit \
 ```
 
 **Example Response:**
+
 ```json
 {
   "assessmentId": "assess_789xyz012",
@@ -271,12 +292,13 @@ curl -X POST /api/assessment/submit \
   ],
   "resultsUrl": "/assessment/results/assess_789xyz012",
   "hubspotSyncStatus": "pending",
-  "emailDeliveryStatus": "sent", 
+  "emailDeliveryStatus": "sent",
   "qualifiedForBriefing": true
 }
 ```
 
 **Status Codes:**
+
 - `200`: Assessment completed successfully
 - `400`: Assessment incomplete or invalid data
 - `401`: Invalid or expired session
@@ -293,30 +315,38 @@ curl -X POST /api/assessment/submit \
 **Purpose:** Retrieve detailed assessment results and recommendations
 
 **Parameters:**
+
 - `assessmentId`: UUID of completed assessment
 
 **Response:**
+
 ```typescript
 interface AssessmentResultsResponse {
   assessmentId: string;
-  completedAt: string;      // ISO timestamp
+  completedAt: string; // ISO timestamp
   totalScore: number;
   scoreBreakdown: {
     valueAssurance: {
-      score: number;          // 0-100
-      weight: number;         // 0.25
+      score: number; // 0-100
+      weight: number; // 0.25
       questions: Array<{
-        id: string;           // Question identifier
-        question: string;     // Question text
-        answer: string;       // Selected answer
-        answerText: string;   // Full answer text
-        points: number;       // Points earned (0-25)
-        maxPoints: number;    // Maximum possible (25)
+        id: string; // Question identifier
+        question: string; // Question text
+        answer: string; // Selected answer
+        answerText: string; // Full answer text
+        points: number; // Points earned (0-25)
+        maxPoints: number; // Maximum possible (25)
       }>;
     };
-    customerSafe: { /* same structure, weight: 0.35 */ };
-    riskCompliance: { /* same structure, weight: 0.25 */ };
-    governance: { /* same structure, weight: 0.15 */ };
+    customerSafe: {
+      /* same structure, weight: 0.35 */
+    };
+    riskCompliance: {
+      /* same structure, weight: 0.25 */
+    };
+    governance: {
+      /* same structure, weight: 0.15 */
+    };
   };
   scoreCategory: string;
   categoryDescription: string;
@@ -326,8 +356,8 @@ interface AssessmentResultsResponse {
     title: string;
     description: string;
     actionItems: string[];
-    estimatedImpact: string;  // Expected improvement
-    timeToImplement: string;  // Implementation timeline
+    estimatedImpact: string; // Expected improvement
+    timeToImplement: string; // Implementation timeline
   }>;
   benchmarks: {
     industryAverage?: number;
@@ -352,12 +382,14 @@ interface AssessmentResultsResponse {
 ```
 
 **Example Request:**
+
 ```bash
 curl -X GET /api/assessment/results/assess_789xyz012 \
   -H "Cookie: assessment-session=sess_abc123def456"
 ```
 
 **Status Codes:**
+
 - `200`: Results retrieved successfully
 - `401`: Invalid session (for accessing own results)
 - `404`: Assessment not found or not completed
@@ -373,36 +405,40 @@ curl -X GET /api/assessment/results/assess_789xyz012 \
 **Purpose:** Get current assessment state for resuming incomplete assessment
 
 **Response:**
+
 ```typescript
 interface ResumeAssessmentResponse {
   hasActiveAssessment: boolean;
   assessment?: {
     assessmentId: string;
-    currentStep: number;      // 0-based step index
-    totalSteps: number;       // Always 4
-    responses: {              // Previously saved responses
+    currentStep: number; // 0-based step index
+    totalSteps: number; // Always 4
+    responses: {
+      // Previously saved responses
       [questionId: string]: string;
     };
-    email?: string;           // If previously provided
-    contactInfo?: {           // If previously provided
+    email?: string; // If previously provided
+    contactInfo?: {
+      // If previously provided
       firstName?: string;
       lastName?: string;
       company?: string;
       phone?: string;
     };
     progress: {
-      completed: number;      // Steps completed
-      percentage: number;     // Completion percentage
+      completed: number; // Steps completed
+      percentage: number; // Completion percentage
     };
-    startedAt: string;        // ISO timestamp
-    timeElapsed: number;      // Seconds since start
-    timeRemaining: number;    // Seconds until expiry
-    resumeUrl: string;        // URL to continue
+    startedAt: string; // ISO timestamp
+    timeElapsed: number; // Seconds since start
+    timeRemaining: number; // Seconds until expiry
+    resumeUrl: string; // URL to continue
   };
 }
 ```
 
 **Example Response:**
+
 ```json
 {
   "hasActiveAssessment": true,
@@ -429,6 +465,7 @@ interface ResumeAssessmentResponse {
 ```
 
 **Status Codes:**
+
 - `200`: Session state retrieved (even if no active assessment)
 - `401`: Invalid session
 - `500`: Server error
@@ -442,27 +479,29 @@ interface ResumeAssessmentResponse {
 **Purpose:** API status and dependency checks
 
 **Response:**
+
 ```typescript
 interface HealthResponse {
   status: 'healthy' | 'degraded' | 'unhealthy';
-  timestamp: string;        // ISO timestamp
-  version: string;          // API version
-  uptime: number;           // Server uptime in seconds
+  timestamp: string; // ISO timestamp
+  version: string; // API version
+  uptime: number; // Server uptime in seconds
   services: {
     database: 'up' | 'down' | 'slow';
     hubspot: 'up' | 'down' | 'rate_limited';
     email: 'up' | 'down' | 'degraded';
-    redis?: 'up' | 'down';  // If using Redis for rate limiting
+    redis?: 'up' | 'down'; // If using Redis for rate limiting
   };
   performance: {
     avgResponseTime: number; // Average API response time (ms)
     requestsPerMinute: number;
-    errorRate: number;       // Error rate percentage
+    errorRate: number; // Error rate percentage
   };
 }
 ```
 
 **Example Response:**
+
 ```json
 {
   "status": "healthy",
@@ -483,41 +522,45 @@ interface HealthResponse {
 ```
 
 **Status Codes:**
+
 - `200`: System healthy or degraded
 - `503`: System unhealthy
 
 ## Error Handling
 
 ### Standard Error Response
+
 ```typescript
 interface APIError {
   error: {
-    code: string;           // Machine-readable error code
-    message: string;        // Human-readable message
-    details?: any;          // Additional context
-    timestamp: string;      // ISO timestamp
-    requestId: string;      // For support/debugging
-    retryAfter?: number;    // Seconds before retry (for rate limits)
+    code: string; // Machine-readable error code
+    message: string; // Human-readable message
+    details?: any; // Additional context
+    timestamp: string; // ISO timestamp
+    requestId: string; // For support/debugging
+    retryAfter?: number; // Seconds before retry (for rate limits)
   };
 }
 ```
 
 ### Error Codes
-| Code | Description | Status | Retryable |
-|------|-------------|--------|-----------|
-| `RATE_LIMIT_EXCEEDED` | Too many requests from IP | 429 | Yes |
-| `SESSION_EXPIRED` | Session expired or invalid | 401 | No |
-| `ASSESSMENT_NOT_FOUND` | Assessment ID doesn't exist | 404 | No |
-| `ASSESSMENT_INCOMPLETE` | Trying to submit incomplete assessment | 400 | No |
-| `VALIDATION_ERROR` | Request data validation failed | 422 | No |
-| `HUBSPOT_SYNC_FAILED` | HubSpot integration error | 200* | N/A |
-| `EMAIL_DELIVERY_FAILED` | Email service error | 200* | N/A |
-| `DATABASE_ERROR` | Database operation failed | 500 | Yes |
-| `SERVICE_UNAVAILABLE` | System temporarily unavailable | 503 | Yes |
 
-*Non-critical errors return 200 with warning/info in response
+| Code                    | Description                            | Status | Retryable |
+| ----------------------- | -------------------------------------- | ------ | --------- |
+| `RATE_LIMIT_EXCEEDED`   | Too many requests from IP              | 429    | Yes       |
+| `SESSION_EXPIRED`       | Session expired or invalid             | 401    | No        |
+| `ASSESSMENT_NOT_FOUND`  | Assessment ID doesn't exist            | 404    | No        |
+| `ASSESSMENT_INCOMPLETE` | Trying to submit incomplete assessment | 400    | No        |
+| `VALIDATION_ERROR`      | Request data validation failed         | 422    | No        |
+| `HUBSPOT_SYNC_FAILED`   | HubSpot integration error              | 200\*  | N/A       |
+| `EMAIL_DELIVERY_FAILED` | Email service error                    | 200\*  | N/A       |
+| `DATABASE_ERROR`        | Database operation failed              | 500    | Yes       |
+| `SERVICE_UNAVAILABLE`   | System temporarily unavailable         | 503    | Yes       |
+
+\*Non-critical errors return 200 with warning/info in response
 
 ### Example Error Response
+
 ```json
 {
   "error": {
@@ -537,16 +580,18 @@ interface APIError {
 ## Rate Limiting
 
 ### Limits by Endpoint
-| Endpoint | Limit | Window | Scope |
-|----------|-------|---------|--------|
-| `/assessment/start` | 10 | 1 hour | Per IP |
-| `/assessment/save-progress` | 100 | 1 hour | Per session |
-| `/assessment/submit` | 5 | 1 hour | Per IP |
-| `/assessment/results/*` | 50 | 1 hour | Per IP |
-| `/assessment/resume` | 20 | 1 hour | Per IP |
-| `/health` | 100 | 1 minute | Per IP |
+
+| Endpoint                    | Limit | Window   | Scope       |
+| --------------------------- | ----- | -------- | ----------- |
+| `/assessment/start`         | 10    | 1 hour   | Per IP      |
+| `/assessment/save-progress` | 100   | 1 hour   | Per session |
+| `/assessment/submit`        | 5     | 1 hour   | Per IP      |
+| `/assessment/results/*`     | 50    | 1 hour   | Per IP      |
+| `/assessment/resume`        | 20    | 1 hour   | Per IP      |
+| `/health`                   | 100   | 1 minute | Per IP      |
 
 ### Rate Limit Headers
+
 ```
 X-RateLimit-Limit: 10
 X-RateLimit-Remaining: 7
@@ -557,6 +602,7 @@ X-RateLimit-RetryAfter: 3600
 ## Session Management
 
 ### Cookie Configuration
+
 ```typescript
 {
   name: 'assessment-session',
@@ -570,6 +616,7 @@ X-RateLimit-RetryAfter: 3600
 ```
 
 ### Session Data
+
 ```typescript
 interface SessionData {
   sessionId: string;
@@ -585,11 +632,13 @@ interface SessionData {
 ## HubSpot Integration
 
 ### Sync Triggers
+
 1. **Immediate:** When assessment submitted with email
 2. **Queued:** Failed syncs with exponential backoff retry
 3. **Manual:** Admin dashboard can trigger resync
 
 ### Sync Payload Format
+
 ```typescript
 interface HubSpotSyncPayload {
   email: string;
@@ -599,43 +648,47 @@ interface HubSpotSyncPayload {
     lastname?: string;
     company?: string;
     phone?: string;
-    
+
     // Custom properties (max 10 on free tier)
-    ai_assessment_score: number;          // Overall score 0-100
-    ai_assessment_category: string;       // Score category
-    ai_value_score: number;               // Value Assurance score
-    ai_customer_score: number;            // Customer-Safe AI score
-    ai_risk_score: number;                // Risk & Compliance score  
-    ai_governance_score: number;          // Implementation Governance score
-    ai_assessment_date: string;           // YYYY-MM-DD format
-    ai_completion_time: number;           // Seconds to complete
-    ai_lead_quality: string;              // 'basic' | 'enhanced' | 'executive_briefing_qualified'
+    ai_assessment_score: number; // Overall score 0-100
+    ai_assessment_category: string; // Score category
+    ai_value_score: number; // Value Assurance score
+    ai_customer_score: number; // Customer-Safe AI score
+    ai_risk_score: number; // Risk & Compliance score
+    ai_governance_score: number; // Implementation Governance score
+    ai_assessment_date: string; // YYYY-MM-DD format
+    ai_completion_time: number; // Seconds to complete
+    ai_lead_quality: string; // 'basic' | 'enhanced' | 'executive_briefing_qualified'
     lead_source: 'AI Reality Check Scorecard';
   };
 }
 ```
 
 ### Deal Creation (Executive Briefing Qualified)
+
 ```typescript
 interface HubSpotDealPayload {
   properties: {
-    dealname: string;                     // "AI Reality Check - John Doe (Acme Corp)"
+    dealname: string; // "AI Reality Check - John Doe (Acme Corp)"
     dealstage: 'executive_briefing_requested';
-    amount: '5000';                       // Estimated consulting value
+    amount: '5000'; // Estimated consulting value
     pipeline: 'ai_consulting_pipeline';
-    closedate: string;                    // 30 days from now
-    ai_assessment_score: number;          // Link to assessment
+    closedate: string; // 30 days from now
+    ai_assessment_score: number; // Link to assessment
   };
-  associations: [{
-    to: { id: string };                   // Contact ID
-    types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 3 }]
-  }];
+  associations: [
+    {
+      to: { id: string }; // Contact ID
+      types: [{ associationCategory: 'HUBSPOT_DEFINED'; associationTypeId: 3 }];
+    },
+  ];
 }
 ```
 
 ## Testing Endpoints
 
 ### Test Data Generation
+
 For development and testing, these endpoints provide sample data:
 
 **GET /api/test/sample-assessment** (development only)
@@ -644,43 +697,44 @@ Returns sample assessment data for UI testing.
 **POST /api/test/simulate-hubspot-failure** (development only)
 Simulates HubSpot API failure for error handling testing.
 
-**GET /api/test/clear-session** (development only) 
+**GET /api/test/clear-session** (development only)
 Clears current session for testing fresh assessment flow.
 
 ## Implementation Examples
 
 ### Frontend API Client
+
 ```typescript
 class AssessmentAPIClient {
   private baseURL = '/api';
-  
+
   async startAssessment(data: StartAssessmentRequest): Promise<StartAssessmentResponse> {
     const response = await fetch(`${this.baseURL}/assessment/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin', // Include session cookie
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     });
-    
+
     if (!response.ok) {
       const error = await response.json();
       throw new APIError(error.error);
     }
-    
+
     return response.json();
   }
-  
+
   async saveProgress(data: SaveProgressRequest): Promise<SaveProgressResponse> {
     const response = await fetch(`${this.baseURL}/assessment/save-progress`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     });
-    
+
     return this.handleResponse(response);
   }
-  
+
   private async handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
       const error = await response.json();
@@ -699,6 +753,7 @@ class APIError extends Error {
 ```
 
 ### Server-Side Implementation Pattern
+
 ```typescript
 // app/api/assessment/start/route.ts
 import { NextRequest, NextResponse } from 'next/server';
@@ -709,30 +764,29 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const validData = startAssessmentSchema.parse(body);
-    
+
     // Create session and assessment
     const session = await createSession(request);
     const assessment = await createAssessment(validData, session);
-    
+
     const response = NextResponse.json({
       sessionId: session.id,
       assessmentId: assessment.id,
       currentStep: 0,
       totalSteps: 4,
       expiresAt: session.expiresAt.toISOString(),
-      resumeUrl: `/assessment/step/1`
+      resumeUrl: `/assessment/step/1`,
     });
-    
+
     // Set session cookie
     response.cookies.set('assessment-session', session.id, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
     });
-    
+
     return response;
-    
   } catch (error) {
     return handleAPIError(error);
   }

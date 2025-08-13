@@ -1,14 +1,17 @@
 # Test-Driven Development (TDD) Workflow Command
 
 To invoke this slash command:
+
 ```
 /tdd-workflow <task-id>
 ```
 
 ## Purpose
+
 This command guides agents through proper Test-Driven Development implementation while strictly enforcing the CLAUDE.md testing guidelines. It ensures agents write tests for REAL functionality, not mocked behavior, and follow the Red-Green-Refactor cycle correctly.
 
 ## Task ID Processing
+
 - **Task/Subtask ID**: {0} (e.g., 14 or 14.3)
 - **Implementation Type**: Full TDD cycle for new functionality
 - **Quality Focus**: Real functionality testing, not mock verification
@@ -16,6 +19,7 @@ This command guides agents through proper Test-Driven Development implementation
 ## Prerequisites Validation
 
 **Before starting TDD cycle, verify:**
+
 ```
 ✅ Prerequisites Check:
 - [ ] Task requirements clearly understood
@@ -24,7 +28,7 @@ This command guides agents through proper Test-Driven Development implementation
 - [ ] Jest configuration verified
 - [ ] Project testing commands functional:
   - npm run test (unit tests)
-  - npm run test:components (React components)  
+  - npm run test:components (React components)
   - npm run test:db (database integration)
   - npm run test:coverage (coverage reporting)
 ```
@@ -36,6 +40,7 @@ This command guides agents through proper Test-Driven Development implementation
 ### Phase 1: RED - Write Failing Test
 
 #### Step 1: Understand Real Functionality Requirements
+
 ```
 📋 Analyzing task {0} requirements:
 
@@ -52,13 +57,14 @@ Key functionality to test:
 ```
 
 #### Step 2: Plan Test Strategy (Anti-Pattern Check)
+
 ```
 🚫 ANTI-PATTERN PREVENTION CHECK:
 
 Will I avoid these critical mistakes?
 - [ ] NOT mocking the method I'm testing
 - [ ] NOT mocking Prisma queries (use test database instead)
-- [ ] NOT testing mock behavior instead of real functionality  
+- [ ] NOT testing mock behavior instead of real functionality
 - [ ] NOT hardcoding expected results without computation
 - [ ] NOT verifying mock calls instead of real outcomes
 
@@ -71,6 +77,7 @@ Will I avoid these critical mistakes?
 ```
 
 #### Step 3: Write Failing Tests
+
 ```
 🔴 RED PHASE: Writing failing tests
 
@@ -88,6 +95,7 @@ Test categories to create:
 ```
 
 **Test file creation pattern:**
+
 ```typescript
 // Example structure - adapt to actual task
 describe('Task {0} - [Feature Name] Real Functionality', () => {
@@ -99,7 +107,9 @@ describe('Task {0} - [Feature Name] Real Functionality', () => {
   describe('Core Business Logic', () => {
     test('should [real behavior description]', () => {
       // Test actual functionality with real inputs
-      const realInput = { /* actual data structure */ };
+      const realInput = {
+        /* actual data structure */
+      };
       const result = actualMethodUnderTest(realInput);
       expect(result).toBe(/* computed expected output */);
     });
@@ -123,10 +133,11 @@ describe('Task {0} - [Feature Name] Real Functionality', () => {
 ```
 
 **Run tests to confirm they fail:**
+
 ```bash
 # Run appropriate test suite based on what was implemented
 npm run test                    # For unit tests
-npm run test:components        # For React component tests  
+npm run test:components        # For React component tests
 npm run test:db               # For database integration tests
 ```
 
@@ -135,6 +146,7 @@ npm run test:db               # For database integration tests
 ### Phase 2: GREEN - Implement Minimal Code
 
 #### Step 4: Implement Just Enough Code
+
 ```
 🟢 GREEN PHASE: Minimal implementation
 
@@ -149,12 +161,14 @@ Implementation guidelines:
 ```
 
 **Code implementation approach:**
+
 1. **Create minimal function signatures** that tests can call
 2. **Implement core logic** to satisfy test expectations
 3. **Add error handling** for test error scenarios
 4. **Integrate with real dependencies** (database, external APIs properly mocked)
 
 #### Step 5: Verify Tests Pass
+
 ```bash
 # Run the same tests that were failing
 npm run test                    # Verify unit tests pass
@@ -164,6 +178,7 @@ npm run test:coverage         # Check coverage contribution
 ```
 
 **Success criteria:**
+
 - All written tests now pass
 - No existing tests broken
 - Code implements real functionality (not hardcoded responses)
@@ -172,6 +187,7 @@ npm run test:coverage         # Check coverage contribution
 ### Phase 3: REFACTOR - Clean Up Code
 
 #### Step 6: Refactor While Maintaining Tests
+
 ```
 🔵 REFACTOR PHASE: Clean up implementation
 
@@ -185,6 +201,7 @@ Refactoring focus areas:
 ```
 
 **Refactoring guidelines:**
+
 ```typescript
 // Example refactoring patterns
 // Before: Basic implementation
@@ -208,16 +225,17 @@ interface ProfileData {
 function calculateProfileCompletion(profile: ProfileData): number {
   const fields = [
     profile.name?.trim(),
-    profile.bio?.trim(), 
+    profile.bio?.trim(),
     profile.skills?.length ? profile.skills : null,
-    profile.photo?.trim()
+    profile.photo?.trim(),
   ].filter(Boolean);
-  
+
   return Math.round((fields.length / 4) * 100);
 }
 ```
 
 #### Step 7: Re-run Tests After Refactoring
+
 ```bash
 # Ensure refactoring didn't break functionality
 npm run test:coverage         # Verify tests still pass and coverage maintained
@@ -228,12 +246,13 @@ npm run typecheck            # Verify TypeScript compliance
 ## Quality Validation
 
 ### Step 8: Final Test Review
+
 ```
 🔍 QUALITY REVIEW CHECKLIST:
 
 Test Quality Assessment:
 - [ ] Tests exercise actual functionality (not mocks of core logic)
-- [ ] Real data flows through real business logic  
+- [ ] Real data flows through real business logic
 - [ ] External dependencies mocked appropriately (Clerk, APIs)
 - [ ] Internal dependencies NOT mocked (Prisma uses test database)
 - [ ] Error cases test real failure scenarios
@@ -244,7 +263,7 @@ Test Quality Assessment:
 
 Coverage Assessment:
 - [ ] Minimum 80% coverage achieved for new code
-- [ ] Critical paths have 100% coverage  
+- [ ] Critical paths have 100% coverage
 - [ ] Tests contribute meaningfully to overall coverage
 - [ ] No artificial coverage boosting (testing trivial code)
 
@@ -257,6 +276,7 @@ Code Quality Assessment:
 ```
 
 ### Step 9: Integration Verification
+
 ```bash
 # Run comprehensive test suite to ensure no regressions
 npm run test:all              # Run all test categories
@@ -267,6 +287,7 @@ npm run lint                  # Final lint check
 ## Success Confirmation
 
 **Upon successful TDD completion:**
+
 ```
 ✅ TDD CYCLE COMPLETED SUCCESSFULLY for Task {0}
 
@@ -295,6 +316,7 @@ TDD cycle successfully maintained focus on REAL functionality testing!
 ## Error Recovery
 
 **If tests mock core functionality:**
+
 ```
 🚨 ANTI-PATTERN DETECTED: Core functionality mocking
 
@@ -314,6 +336,7 @@ Reference: CLAUDE.md "Critical Testing Anti-Patterns (AVOID)" section
 ```
 
 **If unclear what functionality to test:**
+
 ```
 ⚠️ UNCLEAR REQUIREMENTS: Need task clarification
 
@@ -333,6 +356,7 @@ Actions needed:
 ## Integration with Project Workflow
 
 This TDD command integrates with:
+
 - **Task Master**: Use `tm show {0}` for task context
 - **Quality Assurance**: Run `/peer-review {0}` after completion
 - **Git Workflow**: Create commits at each TDD phase
@@ -349,6 +373,7 @@ This TDD command integrates with:
 ## Important Reminders
 
 **NEVER:**
+
 - Mock the method you're testing
 - Test that mocked functions return mocked values
 - Hardcode expected results without computation
@@ -356,6 +381,7 @@ This TDD command integrates with:
 - Suppress React act() warnings
 
 **ALWAYS:**
+
 - Test real functionality with real data
 - Mock only external APIs and services
 - Use test database for Prisma operations

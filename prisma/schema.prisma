@@ -1,0 +1,212 @@
+// AI Reality Check Scorecard Database Schema
+// PostgreSQL database with Prisma ORM
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Assessment {
+  id        String   @id @default(uuid())
+  sessionId String   @unique
+  
+  // Assessment response data
+  responses      Json     // {"q1": "A", "q2": "B", ...} - all question responses
+  totalScore     Int?     // 0-100 overall calculated score
+  scoreBreakdown Json?    // {"valueAssurance": 75, "customerSafe": 80, "riskCompliance": 65, "governance": 70}
+  scoreCategory  String?  // 'champion', 'builder', 'risk_zone', 'alert', 'crisis'
+  recommendations String[] // Array of personalized recommendation strings
+  
+  // Progressive user data capture (scrubbed after 30 days for privacy)
+  email          String?
+  company        String?
+  firstName      String?
+  lastName       String?
+  phone          String?
+  jobTitle       String?
+  companySize    String?  // 'startup', 'small', 'medium', 'large', 'enterprise'
+  industry       String?
+  
+  // HubSpot CRM integration tracking
+  hubspotSyncStatus     String    @default("pending") // 'pending', 'synced', 'failed', 'skipped'
+  hubspotSyncAttempts   Int       @default(0)
+  hubspotContactId      String?
+  hubspotDealId         String?   // For executive briefing qualified leads
+  hubspotSyncError      String?
+  hubspotSyncedAt       DateTime?
+  hubspotLastRetryAt    DateTime?
+  
+  // Assessment lifecycle timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  completedAt     DateTime? // When assessment was fully submitted
+  emailScrubbedAt DateTime? // When PII was scrubbed (30 days after completion)
+  
+  // Analytics and performance data (preserved after email scrub)
+  completionTimeSeconds Int?     // Total time spent completing assessment
+  stepTimings          Json?     // {"step1": 45, "step2": 67, ...} time per step in seconds
+  browserInfo          Json?     // {"userAgent": "...", "viewport": {"width": 1920, "height": 1080}}
+  referrerSource       String?   // Where the user came from
+  abTestVariant        String?   // A/B test variant assignment
+  deviceType           String?   // 'mobile', 'tablet', 'desktop'
+  abandonmentStep      Int?      // Which step user abandoned on (if incomplete)
+  
+  // Email automation tracking
+  resultEmailSentAt    DateTime?
+  resultEmailOpenedAt  DateTime?
+  resultEmailClickedAt DateTime?
+  followupEmailsSent   Int       @default(0)
+  
+  // Relationships
+  syncQueue HubspotSyncQueue[]
+  
+  // Database indexes for performance
+  @@index([sessionId])
+  @@index([email])
+  @@index([createdAt])
+  @@index([completedAt])
+  @@index([hubspotSyncStatus])
+  @@index([scoreCategory, totalScore])
+  @@index([createdAt, totalScore, scoreCategory], name: "analytics_idx")
+  @@index([emailScrubbedAt])
+  @@map("assessments")
+}
+
+model AssessmentSession {
+  sessionId     String   @id @default(uuid())
+  
+  // Session state tracking
+  currentStep   Int      @default(0)        // Current step in assessment (0-4)
+  totalSteps    Int      @default(4)        // Total number of steps
+  responses     Json     @default("{}")     // Current responses {"q1": "A", "q2": "B"}
+  
+  // Progressive data capture during session
+  email         String?
+  firstName     String?
+  lastName      String?
+  company       String?
+  
+  // Session lifecycle
+  startedAt     DateTime @default(now())
+  lastActivity  DateTime @default(now())    // Updated on each interaction
+  expiresAt     DateTime @default(dbgenerated("(CURRENT_TIMESTAMP + INTERVAL '24 hours')"))
+  isComplete    Boolean  @default(false)
+  
+  // Analytics
+  userAgent     String?
+  ipAddress     String?  // Hashed for privacy
+  referrer      String?
+  abTestVariant String?
+  
+  @@index([sessionId])
+  @@index([expiresAt])
+  @@index([lastActivity])
+  @@map("assessment_sessions")
+}
+
+model HubspotSyncQueue {
+  id            String   @id @default(uuid())
+  assessmentId  String
+  
+  // Retry logic
+  payload       Json     // Assessment data to sync
+  retryCount    Int      @default(0)
+  maxRetries    Int      @default(5)
+  nextRetryAt   DateTime @default(now())
+  
+  // Error tracking
+  lastError     String?
+  errorType     String?  // 'rate_limit', 'auth_error', 'validation_error', 'server_error'
+  
+  // Queue metadata
+  createdAt     DateTime @default(now())
+  processedAt   DateTime?
+  status        String   @default("pending") // 'pending', 'processing', 'completed', 'failed'
+  priority      Int      @default(5)         // 1 (high) to 10 (low)
+  
+  // Relationships
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  
+  @@index([nextRetryAt, status])
+  @@index([createdAt])
+  @@index([assessmentId])
+  @@map("hubspot_sync_queue")
+}
+
+model EmailEvent {
+  id            String   @id @default(uuid())
+  
+  // Email identification
+  messageId     String   // From email service provider
+  recipientHash String   // SHA256 hash of email for privacy
+  emailType     String   // 'assessment_results', 'followup', 'reminder'
+  
+  // Event tracking
+  eventType     String   // 'sent', 'delivered', 'opened', 'clicked', 'bounced', 'complaint'
+  eventData     Json?    // Additional event metadata
+  timestamp     DateTime @default(now())
+  
+  // A/B testing
+  subjectLine   String?
+  templateVariant String?
+  
+  // Analytics aggregation helper
+  dateKey       String   @default(dbgenerated("TO_CHAR(CURRENT_TIMESTAMP, 'YYYY-MM-DD')"))
+  
+  @@index([messageId])
+  @@index([recipientHash])
+  @@index([eventType, timestamp])
+  @@index([dateKey, emailType])
+  @@map("email_events")
+}
+
+model AnalyticsEvent {
+  id          String   @id @default(uuid())
+  
+  // Event identification
+  eventType   String   // 'page_view', 'step_completed', 'assessment_started', 'assessment_completed'
+  eventData   Json     // Event-specific data
+  
+  // Session and user tracking (anonymous)
+  sessionHash String   // SHA256 hash of session ID
+  userHash    String?  // SHA256 hash of email (when available)
+  
+  // Context
+  page        String?
+  referrer    String?
+  userAgent   String?
+  deviceType  String?
+  
+  // Timing
+  timestamp   DateTime @default(now())
+  dateKey     String   @default(dbgenerated("TO_CHAR(CURRENT_TIMESTAMP, 'YYYY-MM-DD')"))
+  hourKey     Int      @default(dbgenerated("EXTRACT(HOUR FROM CURRENT_TIMESTAMP)"))
+  
+  @@index([eventType, timestamp])
+  @@index([dateKey, eventType])
+  @@index([sessionHash])
+  @@map("analytics_events")
+}
+
+// Data retention policies (automated cleanup)
+model DataRetentionLog {
+  id              String   @id @default(uuid())
+  
+  // Retention operation tracking
+  operationType   String   // 'email_scrub', 'session_cleanup', 'analytics_aggregation'
+  recordsProcessed Int
+  recordsDeleted   Int
+  
+  // Execution details
+  executedAt      DateTime @default(now())
+  durationMs      Int
+  status          String   // 'completed', 'failed', 'partial'
+  errorMessage    String?
+  
+  @@index([executedAt, operationType])
+  @@map("data_retention_logs")
+}

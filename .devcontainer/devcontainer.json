@@ -37,7 +37,5 @@
   "remoteEnv": {
     "SSH_AUTH_SOCK": "/tmp/ssh-agent"
   },
-  "mounts": [
-    "source=${localEnv:SSH_AUTH_SOCK},target=/tmp/ssh-agent,type=bind,consistency=cached"
-  ]
+  "mounts": ["source=${localEnv:SSH_AUTH_SOCK},target=/tmp/ssh-agent,type=bind,consistency=cached"]
 }

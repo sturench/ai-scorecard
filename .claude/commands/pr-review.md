@@ -1,18 +1,21 @@
 # GitHub Pull Request Review - Comprehensive Quality Assurance
 
 To invoke this slash command:
+
 ```bash
 /pr-review                    # Auto-detect current PR with standard review
-/pr-review --quick           # Fast review focusing on critical issues only  
+/pr-review --quick           # Fast review focusing on critical issues only
 /pr-review --thorough        # Comprehensive deep-dive review with all experts
 /pr-review --all-experts     # Force all expert reviews regardless of file changes
 /pr-review --pr-number=123   # Review specific PR by number
 ```
 
 ## Purpose
+
 This command provides comprehensive, expert-driven pull request reviews integrated with GitHub, Task Master, and your established quality gates. It automatically selects relevant experts based on changed files, verifies CI status, runs quality checks, and posts structured GitHub review comments with specific suggestions.
 
 ## Parameters Processing
+
 - **PR Detection**: Auto-detect current branch PR or use `--pr-number`
 - **Review Depth**: `--quick` (critical only) | standard (default) | `--thorough` (comprehensive)
 - **Expert Selection**: Smart detection based on file changes or `--all-experts` to force all
@@ -21,12 +24,14 @@ This command provides comprehensive, expert-driven pull request reviews integrat
 ## Step 1: Pre-Flight Checks
 
 ### GitHub Integration Verification
+
 ```bash
 # Check gh CLI availability and authentication
 gh auth status
 ```
 
 **If gh CLI not available or not authenticated**:
+
 ```
 ❌ GitHub CLI Required
 
@@ -39,9 +44,11 @@ Setup steps:
 
 Please complete GitHub CLI setup and retry.
 ```
+
 **⚠️ STOP - Cannot proceed without GitHub integration**
 
 ### PR Detection and Validation
+
 ```bash
 # Auto-detect current PR or use specified number
 if [[ -z "--pr-number" ]]; then
@@ -54,7 +61,7 @@ else
   PR_NUMBER="--pr-number value"
 fi
 
-# Validate PR exists and is reviewable  
+# Validate PR exists and is reviewable
 gh pr view $PR_NUMBER --json state,mergeable,title,author 2>/dev/null || {
   echo "❌ PR #$PR_NUMBER not found or inaccessible"
   exit 1
@@ -62,6 +69,7 @@ gh pr view $PR_NUMBER --json state,mergeable,title,author 2>/dev/null || {
 ```
 
 ### CI Status Verification
+
 ```bash
 # Check CI status before review
 CI_STATUS=$(gh pr checks $PR_NUMBER --json state,conclusion --jq '.[] | select(.conclusion != null) | .conclusion' | sort -u)
@@ -75,6 +83,7 @@ fi
 ## Step 2: Change Analysis and Expert Selection
 
 ### Fetch PR Details
+
 ```bash
 # Get PR information
 PR_INFO=$(gh pr view $PR_NUMBER --json title,body,author,files,additions,deletions,changedFiles)
@@ -84,6 +93,7 @@ CHANGED_FILES=$(echo "$PR_INFO" | jq -r '.files[].path')
 ```
 
 ### Intelligent Expert Detection
+
 Based on changed files, automatically select relevant experts:
 
 ```bash
@@ -95,7 +105,7 @@ if echo "$CHANGED_FILES" | grep -E "\.(tsx?|jsx?|css|scss)$|/components/|/pages/
   EXPERTS_NEEDED+=("@frontend-specialist")
 fi
 
-# Backend Expert Detection  
+# Backend Expert Detection
 if echo "$CHANGED_FILES" | grep -E "/api/|\.prisma|/lib/.*\.(ts|js)$|/utils/.*\.(ts|js)$|schema\.|middleware\.|route\."; then
   EXPERTS_NEEDED+=("@backend-specialist")
 fi
@@ -132,12 +142,13 @@ fi
 ```
 
 **Display detected experts and changes**:
+
 ```
 🔍 PR #$PR_NUMBER Analysis: "$PR_TITLE"
 
 📊 Change Summary:
 - Files changed: $(echo "$PR_INFO" | jq -r '.changedFiles')
-- Lines added: $(echo "$PR_INFO" | jq -r '.additions') 
+- Lines added: $(echo "$PR_INFO" | jq -r '.additions')
 - Lines deleted: $(echo "$PR_INFO" | jq -r '.deletions')
 - Author: $PR_AUTHOR
 
@@ -158,7 +169,7 @@ if [[ -n "$TASK_REFERENCES" ]]; then
   for task_ref in $TASK_REFERENCES; do
     TASK_ID=$(echo "$task_ref" | grep -oE "[0-9]+(\.[0-9]+)?")
     echo "  - Checking $task_ref: $TASK_ID"
-    
+
     # Get task status and details
     task-master show "$TASK_ID" 2>/dev/null || echo "    ⚠️ Task $TASK_ID not found in Task Master"
   done
@@ -168,6 +179,7 @@ fi
 ## Step 4: Local Quality Gate Verification
 
 ### Pre-Review Quality Checks
+
 ```bash
 # Run essential quality checks before expert review
 echo "🔧 Running Local Quality Gates..."
@@ -190,6 +202,7 @@ fi
 ## Step 5: Multi-Expert Review Orchestration
 
 ### Review Depth Configuration
+
 ```bash
 REVIEW_DEPTH="standard"
 [[ "$*" == *"--quick"* ]] && REVIEW_DEPTH="quick"
@@ -197,9 +210,11 @@ REVIEW_DEPTH="standard"
 ```
 
 ### Expert Review Execution
+
 For each selected expert, conduct focused review:
 
 #### Frontend Specialist Review (@frontend-specialist)
+
 ```
 ## Frontend Expert Review - PR #$PR_NUMBER
 
@@ -234,6 +249,7 @@ For each selected expert, conduct focused review:
 ```
 
 #### Backend Specialist Review (@backend-specialist)
+
 ```
 ## Backend Expert Review - PR #$PR_NUMBER
 
@@ -268,6 +284,7 @@ For each selected expert, conduct focused review:
 ```
 
 #### Quality Assurance Review (@quality-assurance-coordinator)
+
 ```
 ## QA Coordinator Review - PR #$PR_NUMBER
 
@@ -294,7 +311,7 @@ For each selected expert, conduct focused review:
 
 ### Quality Gates Status
 [✅/⚠️/❌] **Architecture**: System design integrity
-[✅/⚠️/❌] **Functionality**: Feature completeness and correctness  
+[✅/⚠️/❌] **Functionality**: Feature completeness and correctness
 [✅/⚠️/❌] **Security**: Vulnerability assessment passed
 [✅/⚠️/❌] **Performance**: Meets <3s load, <1s search requirements
 [✅/⚠️/❌] **Testing**: Proper methodology without anti-patterns
@@ -307,6 +324,7 @@ For each selected expert, conduct focused review:
 ```
 
 #### Architecture Advisor Review (@architecture-advisor) - If Major Changes
+
 ```
 ## Architecture Review - PR #$PR_NUMBER
 
@@ -339,8 +357,9 @@ For each selected expert, conduct focused review:
 ### Blocking vs Non-Blocking Criteria
 
 **Blocking Issues (❌ REJECTED)**:
+
 - Security vulnerabilities or data exposure risks
-- Breaking changes without proper migration path  
+- Breaking changes without proper migration path
 - Test failures or critical functionality broken
 - Performance regressions exceeding thresholds (<3s load, <1s search)
 - Tests exhibiting anti-patterns (over-mocking core functionality)
@@ -348,6 +367,7 @@ For each selected expert, conduct focused review:
 - Data integrity risks or database corruption potential
 
 **Non-Blocking Concerns (⚠️ CONDITIONAL)**:
+
 - Code style inconsistencies (fixable with auto-formatting)
 - Minor performance optimizations
 - Missing non-critical test coverage
@@ -356,10 +376,11 @@ For each selected expert, conduct focused review:
 - Refactoring opportunities
 
 ### Decision Matrix
+
 ```bash
 # Count expert approvals
 APPROVED_COUNT=$(grep -c "✅ APPROVED" expert_reviews.tmp)
-CONCERN_COUNT=$(grep -c "⚠️ CONCERNS" expert_reviews.tmp)  
+CONCERN_COUNT=$(grep -c "⚠️ CONCERNS" expert_reviews.tmp)
 REJECTED_COUNT=$(grep -c "❌ REJECTED" expert_reviews.tmp)
 
 # Determine overall status
@@ -378,6 +399,7 @@ fi
 ## Step 7: GitHub Review Posting
 
 ### Structured Review Comment Generation
+
 ```bash
 # Generate comprehensive review comment
 cat > pr_review.md << EOF
@@ -444,7 +466,7 @@ fi)
 
 ### 🔧 Quality Gates Status
 - **Build:** $(npm run build >/dev/null 2>&1 && echo "✅ Passed" || echo "❌ Failed")
-- **TypeScript:** $(npm run typecheck >/dev/null 2>&1 && echo "✅ Passed" || echo "❌ Failed")  
+- **TypeScript:** $(npm run typecheck >/dev/null 2>&1 && echo "✅ Passed" || echo "❌ Failed")
 - **Linting:** $(npm run lint >/dev/null 2>&1 && echo "✅ Passed" || echo "⚠️ Issues")
 - **Tests:** $(if [[ "$REVIEW_DEPTH" == "thorough" ]]; then npm test >/dev/null 2>&1 && echo "✅ Passed" || echo "❌ Failed"; else echo "🔄 Skipped (run with --thorough)"; fi)
 
@@ -455,6 +477,7 @@ EOF
 ```
 
 ### Post Review to GitHub
+
 ```bash
 # Post the review using gh CLI
 gh pr review $PR_NUMBER --$GITHUB_ACTION --body-file pr_review.md
@@ -472,13 +495,13 @@ echo "🔗 View PR: $(gh pr view $PR_NUMBER --json url --jq '.url')"
 if [[ -n "$TASK_REFERENCES" ]]; then
   for task_ref in $TASK_REFERENCES; do
     TASK_ID=$(echo "$task_ref" | grep -oE "[0-9]+(\.[0-9]+)?")
-    
+
     if task-master show "$TASK_ID" >/dev/null 2>&1; then
       UPDATE_MSG="PR review completed: $OVERALL_STATUS
-      
+
 PR #$PR_NUMBER Expert Review Results:
 $(echo "${EXPERTS_NEEDED[@]}" | tr ' ' ', ') conducted $REVIEW_DEPTH review
-      
+
 Review Status: $GITHUB_ACTION
 $(if [[ "$GITHUB_ACTION" == "APPROVE" ]]; then echo "✅ Ready for merge and task completion"; elif [[ "$GITHUB_ACTION" == "COMMENT" ]]; then echo "⚠️ Minor concerns to address"; else echo "❌ Critical issues require fixes"; fi)
 
@@ -498,7 +521,7 @@ fi
 
 📊 **Review Summary:**
 - **Experts:** $(echo "${EXPERTS_NEEDED[@]}" | tr ' ' ', ')
-- **Decision:** $OVERALL_STATUS  
+- **Decision:** $OVERALL_STATUS
 - **GitHub Action:** $GITHUB_ACTION
 - **Quality Gates:** $(npm run build >/dev/null 2>&1 && echo "Build ✅" || echo "Build ❌") $(npm run typecheck >/dev/null 2>&1 && echo "TS ✅" || echo "TS ❌")
 
@@ -516,13 +539,14 @@ fi)
 
 **Available Follow-up Commands:**
 - \`/pr-review --pr-number=$PR_NUMBER --thorough\` - More comprehensive review
-- \`/task-kickoff <task-id>\` - Start related task work  
+- \`/task-kickoff <task-id>\` - Start related task work
 - \`/subtask-kickoff <subtask-id>\` - Work on specific subtask
 ```
 
 ## Error Handling and Fallbacks
 
 ### GitHub API Rate Limiting
+
 ```bash
 if gh api rate_limit --jq '.rate.remaining' | awk '{if ($1 < 10) print "low"}' | grep -q low; then
   echo "⚠️ GitHub API rate limit low. Review may be slower."
@@ -531,6 +555,7 @@ fi
 ```
 
 ### Expert Agent Failures
+
 ```bash
 # If an expert agent fails, continue with available experts
 if ! expert_review_function; then
@@ -540,6 +565,7 @@ fi
 ```
 
 ### Task Master Unavailable
+
 ```bash
 if ! command -v task-master >/dev/null 2>&1; then
   echo "📋 Task Master not available - skipping task integration"
@@ -569,7 +595,7 @@ fi
 ## Integration Notes
 
 - **GitHub Integration**: Requires `gh` CLI installation and authentication
-- **Expert System**: Leverages existing Claude Code agent architecture  
+- **Expert System**: Leverages existing Claude Code agent architecture
 - **Task Master**: Automatically updates related tasks with review outcomes
 - **Quality Gates**: Integrates with existing testing and build pipeline
 - **Professional Format**: Uses GitHub suggestion format for code improvements

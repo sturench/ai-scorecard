@@ -2,9 +2,10 @@
 
 ## Overview
 
-This document presents the revised 12 primary tasks for the AI Reality Check Scorecard project, restructured to properly support Test-Driven Development (TDD) methodology. 
+This document presents the revised 12 primary tasks for the AI Reality Check Scorecard project, restructured to properly support Test-Driven Development (TDD) methodology.
 
 **Key Changes Made:**
+
 1. **Testing Infrastructure Moved Early**: Testing setup now occurs in Task 2 (immediately after basic project setup)
 2. **TDD Integration**: Every feature task explicitly includes TDD workflow (RED-GREEN-REFACTOR)
 3. **Eliminated Standalone Testing Task**: Testing is now embedded within each feature implementation
@@ -15,11 +16,13 @@ This document presents the revised 12 primary tasks for the AI Reality Check Sco
 ## Revised Task Breakdown
 
 ### **Task 1: Project Foundation & Environment Setup**
+
 **Priority**: Critical | **Phase**: MVP | **Effort**: Medium (2-3 days)
 
 **Business Value**: Establishes development infrastructure and deployment pipeline for rapid iteration.
 
 **Core Activities**:
+
 - Next.js 14.2 project initialization with TypeScript
 - Tailwind CSS configuration with custom properties
 - Environment variable structure (.env.example, .env.local)
@@ -32,12 +35,14 @@ This document presents the revised 12 primary tasks for the AI Reality Check Sco
 
 ---
 
-### **Task 2: Testing Infrastructure & Framework Setup** 
+### **Task 2: Testing Infrastructure & Framework Setup**
+
 **Priority**: Critical | **Phase**: MVP | **Effort**: Medium (2-3 days)
 
 **Business Value**: Enables TDD workflow from day one, ensuring code quality and reducing bugs throughout development.
 
 **Core Activities**:
+
 - **Jest Configuration**: Unit testing framework with TypeScript support
 - **React Testing Library**: Component testing setup with custom render utilities
 - **Playwright Setup**: End-to-end testing framework for user journeys
@@ -48,6 +53,7 @@ This document presents the revised 12 primary tasks for the AI Reality Check Sco
 - **CI/CD Integration**: GitHub Actions for automated testing
 
 **TDD Foundation**:
+
 - Write failing tests for basic project structure
 - Test environment configuration validation
 - Database connection and migration testing
@@ -59,16 +65,19 @@ This document presents the revised 12 primary tasks for the AI Reality Check Sco
 ---
 
 ### **Task 3: Database Schema & Prisma ORM Setup**
+
 **Priority**: Critical | **Phase**: MVP | **Effort**: Medium (2-3 days)
 
 **Business Value**: Establishes data persistence layer with type safety and migration support.
 
 **TDD Approach**:
+
 - **RED**: Write tests for Prisma models and database operations
 - **GREEN**: Implement Prisma schema and basic CRUD operations
 - **REFACTOR**: Optimize schema relationships and add indexes
 
 **Core Activities**:
+
 - Prisma ORM configuration and client setup
 - Assessment, Response, and Analytics models
 - Database migration system
@@ -82,16 +91,19 @@ This document presents the revised 12 primary tasks for the AI Reality Check Sco
 ---
 
 ### **Task 4: HubSpot CRM Integration & API Layer**
+
 **Priority**: Critical | **Phase**: MVP | **Effort**: Large (4-5 days)
 
 **Business Value**: Enables lead capture and CRM automation, core to business model success.
 
 **TDD Approach**:
+
 - **RED**: Write tests for HubSpot API integration, contact creation, and error handling
 - **GREEN**: Implement minimal HubSpot integration with retry logic
 - **REFACTOR**: Add advanced features like batch operations and webhook handling
 
 **Core Activities**:
+
 - HubSpot API client with TypeScript types
 - Contact creation and property mapping
 - Rate limiting and retry logic (100 requests/10 seconds)
@@ -105,19 +117,22 @@ This document presents the revised 12 primary tasks for the AI Reality Check Sco
 ---
 
 ### **Task 5: Assessment Content & Scoring Engine**
+
 **Priority**: High | **Phase**: MVP | **Effort**: Large (4-5 days)
 
 **Business Value**: Implements core business logic for assessment scoring and results calculation.
 
 **TDD Approach**:
+
 - **RED**: Write tests for scoring algorithms, question validation, and result calculations
 - **GREEN**: Implement basic scoring engine with minimal features
 - **REFACTOR**: Optimize algorithms and add advanced scoring features
 
 **Core Activities**:
+
 - Question data structure and validation
 - Scoring algorithm implementation (weighted areas)
-- Results calculation and categorization  
+- Results calculation and categorization
 - Question flow logic and branching
 - Content management system for questions
 - Scoring accuracy testing with known scenarios
@@ -128,16 +143,19 @@ This document presents the revised 12 primary tasks for the AI Reality Check Sco
 ---
 
 ### **Task 6: Assessment Step 1 UI - AI Value Assurance (25%)**
+
 **Priority**: High | **Phase**: MVP | **Effort**: Medium (3-4 days)
 
 **Business Value**: First user touchpoint - must be engaging and build confidence in assessment quality.
 
 **TDD Approach**:
+
 - **RED**: Write component tests for form validation, user interactions, and state management
 - **GREEN**: Build minimal functional components with basic styling
 - **REFACTOR**: Add animations, advanced styling, and accessibility features
 
 **Core Activities**:
+
 - React components for AI Value Assurance questions
 - Form validation and error handling
 - Progress tracking UI component
@@ -150,16 +168,19 @@ This document presents the revised 12 primary tasks for the AI Reality Check Sco
 ---
 
 ### **Task 7: Assessment Step 2 UI - Customer-Safe AI (35%)**
+
 **Priority**: High | **Phase**: MVP | **Effort**: Medium (3-4 days)
 
 **Business Value**: Highest weighted area - critical for accurate assessment and user engagement.
 
 **TDD Approach**:
+
 - **RED**: Write tests for complex question types, conditional logic, and data validation
 - **GREEN**: Implement core components with customer safety focus
 - **REFACTOR**: Add advanced UI patterns and interaction feedback
 
 **Core Activities**:
+
 - Customer-Safe AI question components
 - Conditional question logic implementation
 - Advanced form controls (sliders, multi-select)
@@ -172,16 +193,19 @@ This document presents the revised 12 primary tasks for the AI Reality Check Sco
 ---
 
 ### **Task 8: Assessment Steps 3 & 4 UI - Risk Management & Governance**
+
 **Priority**: High | **Phase**: MVP | **Effort**: Large (4-5 days)
 
 **Business Value**: Completes assessment flow and positions results as comprehensive evaluation.
 
 **TDD Approach**:
+
 - **RED**: Write tests for final steps, data completion validation, and user flow completion
 - **GREEN**: Build remaining assessment steps with consistent UX patterns
 - **REFACTOR**: Polish entire assessment flow and optimize transitions
 
 **Core Activities**:
+
 - Model Risk & Compliance questions (25% weight)
 - Implementation Governance questions (15% weight)
 - Optional email capture with progressive disclosure
@@ -194,16 +218,19 @@ This document presents the revised 12 primary tasks for the AI Reality Check Sco
 ---
 
 ### **Task 9: Results Page & Executive Briefing CTA**
+
 **Priority**: High | **Phase**: MVP | **Effort**: Large (4-5 days)
 
 **Business Value**: Primary conversion point - directly impacts business success metrics.
 
 **TDD Approach**:
+
 - **RED**: Write tests for results calculation display, CTA functionality, and conversion tracking
 - **GREEN**: Build results visualization and basic CTA implementation
 - **REFACTOR**: Add persuasive design elements and advanced analytics tracking
 
 **Core Activities**:
+
 - Dynamic results visualization (charts, scores)
 - Executive-focused recommendations
 - Compelling CTA for Executive Briefing
@@ -216,16 +243,19 @@ This document presents the revised 12 primary tasks for the AI Reality Check Sco
 ---
 
 ### **Task 10: Email Automation & Templates**
+
 **Priority**: High | **Phase**: MVP | **Effort**: Medium (3-4 days)
 
 **Business Value**: Automates follow-up and nurtures leads through the conversion funnel.
 
 **TDD Approach**:
+
 - **RED**: Write tests for email template rendering, automation triggers, and delivery validation
 - **GREEN**: Implement basic email system with core templates
 - **REFACTOR**: Add advanced personalization and automation logic
 
 **Core Activities**:
+
 - React Email template system
 - Automated email workflows (Resend/SendGrid)
 - Personalized content based on assessment results
@@ -238,16 +268,19 @@ This document presents the revised 12 primary tasks for the AI Reality Check Sco
 ---
 
 ### **Task 11: Analytics & Performance Tracking**
+
 **Priority**: Medium | **Phase**: MVP | **Effort**: Medium (3-4 days)
 
 **Business Value**: Provides insights for optimization and validates business model assumptions.
 
 **TDD Approach**:
+
 - **RED**: Write tests for analytics event tracking, data collection, and privacy compliance
 - **GREEN**: Implement basic analytics with key metrics
 - **REFACTOR**: Add advanced analytics features and reporting dashboards
 
 **Core Activities**:
+
 - Google Analytics 4 integration
 - Custom event tracking (funnel steps, time spent)
 - Conversion rate optimization metrics
@@ -260,16 +293,19 @@ This document presents the revised 12 primary tasks for the AI Reality Check Sco
 ---
 
 ### **Task 12: Responsive Design & Cross-Browser Polish**
+
 **Priority**: Medium | **Phase**: MVP | **Effort**: Medium (3-4 days)
 
 **Business Value**: Ensures professional experience across all devices and browsers used by C-suite executives.
 
 **TDD Approach**:
+
 - **RED**: Write visual regression tests and cross-browser compatibility tests
 - **GREEN**: Fix responsive issues and basic browser compatibility
 - **REFACTOR**: Add advanced responsive features and accessibility improvements
 
 **Core Activities**:
+
 - Mobile-first responsive design refinement
 - Cross-browser compatibility testing (Chrome, Safari, Firefox, Edge)
 - Performance optimization (bundle size, loading speed)
@@ -324,14 +360,17 @@ The original "Task 11: Testing Framework & Quality Assurance" approach was probl
 ## Dependencies & Flow
 
 ### Critical Path
+
 Tasks 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12
 
 ### Parallel Development Opportunities
+
 - Tasks 5 (Scoring Engine) and 4 (HubSpot Integration) can be developed in parallel after Task 3
 - Tasks 10 (Email) and 11 (Analytics) can be developed in parallel after Task 9
 - Task 12 (Polish) requires all other tasks to be functionally complete
 
 ### Testing Infrastructure Dependencies
+
 - All feature tasks (3-12) depend on Task 2 (Testing Infrastructure)
 - This ensures TDD methodology can be properly followed throughout development
 - No feature development should begin without proper testing foundation
@@ -341,12 +380,14 @@ Tasks 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12
 ## Success Metrics for TDD Implementation
 
 ### Code Quality Metrics
+
 - **Test Coverage**: >90% for critical business logic, >80% overall
 - **Test Quality**: Each feature has unit, integration, and acceptance tests
 - **TDD Compliance**: All features follow RED-GREEN-REFACTOR cycle
 - **Bug Density**: <2 bugs per 100 lines of code in production
 
-### Development Efficiency Metrics  
+### Development Efficiency Metrics
+
 - **Time to Fix Bugs**: <2 hours average (due to comprehensive test suite)
 - **Regression Rate**: <5% of bug fixes introduce new bugs
 - **Refactoring Safety**: 100% of refactoring tasks maintain green test suite
