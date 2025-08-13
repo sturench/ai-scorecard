@@ -1,14 +1,17 @@
 # Quality Assurance Review Slash Command
 
 To invoke this slash command:
+
 ```
 /peer-review 14.3
 ```
 
 ## Purpose
+
 This command engages the @quality-assurance-coordinator agent to orchestrate a comprehensive multi-dimensional quality review of completed subtask work, ensuring highest standards across architecture, functionality, security, performance, testing, and user experience.
 
 ## Task ID Processing
+
 - **Subtask ID**: {0} (e.g., 14.3)
 - **Parent Task ID**: Derive from {0} by removing everything after the dot (e.g., 14.3 → 14)
 - **Task Type**: Subtask review (contains a dot in the ID)
@@ -16,6 +19,7 @@ This command engages the @quality-assurance-coordinator agent to orchestrate a c
 ## Agent Handoff Process
 
 ### Step 1: Context Preparation
+
 ```
 I'll now hand off to the @quality-assurance-coordinator agent for comprehensive quality review of subtask {0}.
 
@@ -30,9 +34,10 @@ Engaging @quality-assurance-coordinator now...
 ```
 
 ### Step 2: Quality Assurance Coordination
-*The @quality-assurance-coordinator agent will take over and conduct:*
 
-1. **Context Gathering**: 
+_The @quality-assurance-coordinator agent will take over and conduct:_
+
+1. **Context Gathering**:
    - Task information retrieval
    - Parent task context review
    - Recent changes identification
@@ -53,16 +58,20 @@ Engaging @quality-assurance-coordinator now...
    - Risk mitigation strategies
 
 ### Step 3: Results Integration
-*The QA Coordinator will provide:*
+
+_The QA Coordinator will provide:_
+
 - Comprehensive quality assessment report
 - Clear deployment recommendation (Approved/Conditional/Rejected)
 - Specific action items if improvements needed
 - Quality monitoring recommendations
 
 ## Legacy Multi-Expert Review Process
-*The following sections are maintained for reference but replaced by the @quality-assurance-coordinator agent workflow*
+
+_The following sections are maintained for reference but replaced by the @quality-assurance-coordinator agent workflow_
 
 #### 🏗️ Architect Review
+
 **Persona**: Senior System Architect with expertise in RAG systems and chunk-based architectures
 **Focus**: Architectural integrity and system-wide implications
 
@@ -89,7 +98,8 @@ Engaging @quality-assurance-coordinator now...
 **Rationale**: [Brief explanation of decision]
 ```
 
-#### 🔍 QA Manager Review  
+#### 🔍 QA Manager Review
+
 **Persona**: Quality Assurance Manager focused on testing standards and regression prevention
 **Focus**: Quality standards, testing coverage, and production readiness
 
@@ -123,6 +133,7 @@ Engaging @quality-assurance-coordinator now...
 ```
 
 #### 📊 Product Manager Review
+
 **Persona**: Product Manager focused on user value and business requirements
 **Focus**: User value delivery and requirement fulfillment
 
@@ -154,6 +165,7 @@ Engaging @quality-assurance-coordinator now...
 ```
 
 #### 🔒 Security Expert Review
+
 **Persona**: Security specialist focused on data protection and system security
 **Focus**: Security implications and data safety
 
@@ -185,6 +197,7 @@ Engaging @quality-assurance-coordinator now...
 ```
 
 #### ⚡ Performance Engineer Review
+
 **Persona**: Performance specialist focused on system efficiency and scalability
 **Focus**: Performance implications and resource optimization
 
@@ -218,6 +231,7 @@ Engaging @quality-assurance-coordinator now...
 ### Phase 3: Review Synthesis
 
 #### Overall Assessment Matrix:
+
 ```
 | Expert Role        | Approval Status | Key Concerns |
 |-------------------|-----------------|--------------|
@@ -231,17 +245,19 @@ Engaging @quality-assurance-coordinator now...
 #### Final Recommendation:
 
 **If All Approved (✅✅✅✅✅)**:
+
 ```
 🎉 PEER REVIEW PASSED - Subtask {0} Ready for Completion
 
 All expert reviews approved this work with no significant concerns.
-The implementation properly advances the chunk-based architecture 
+The implementation properly advances the chunk-based architecture
 while maintaining quality, security, and performance standards.
 
 Recommended next action: Mark subtask as complete and proceed to next task.
 ```
 
 **If Minor Concerns (some ⚠️)**:
+
 ```
 ⚠️ PEER REVIEW: MINOR CONCERNS - Action Required
 
@@ -251,13 +267,14 @@ The following concerns need attention before completion:
 
 Recommended approach:
 1. Address the identified concerns
-2. Re-run specific expert reviews as needed  
+2. Re-run specific expert reviews as needed
 3. Proceed with completion once concerns resolved
 
 Estimated time to resolve: [estimate]
 ```
 
 **If Major Issues (any ❌)**:
+
 ```
 ❌ PEER REVIEW: MAJOR ISSUES - Rework Required
 
@@ -278,7 +295,7 @@ This subtask is NOT ready for completion.
 
 Based on review outcomes:
 
-1. **For PASSED reviews**: 
+1. **For PASSED reviews**:
    - Document successful peer review in subtask
    - Provide summary of validation completed
    - Ready for user to mark task complete
@@ -304,6 +321,7 @@ Based on review outcomes:
 ## Integration with Subtask Workflow
 
 This quality assurance review should be run:
+
 - After subtask implementation is complete
 - Before marking subtask as done
 - When user selects comprehensive QA option in subtask validation phase

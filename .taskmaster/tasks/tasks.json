@@ -135,9 +135,7 @@
             "title": "KPI Compliance Tracking System",
             "description": "Implement KPI tracking system that monitors business requirements: >70% completion rate, >15% executive briefing conversion, <2s page load times, and >65% mobile completion rate",
             "status": "pending",
-            "dependencies": [
-              1
-            ],
+            "dependencies": [1],
             "details": "",
             "testStrategy": ""
           },
@@ -146,9 +144,7 @@
             "title": "Conversion Funnel Analysis Engine",
             "description": "Build comprehensive funnel analysis system that tracks user progression through assessment steps with dropoff identification and KPI validation against business targets",
             "status": "pending",
-            "dependencies": [
-              1
-            ],
+            "dependencies": [1],
             "details": "",
             "testStrategy": ""
           },
@@ -157,10 +153,7 @@
             "title": "Real-Time Analytics Dashboard",
             "description": "Create interactive dashboard component with live KPI monitoring, funnel visualization, and real-time metrics updates every 30 seconds",
             "status": "pending",
-            "dependencies": [
-              2,
-              3
-            ],
+            "dependencies": [2, 3],
             "details": "",
             "testStrategy": ""
           },
@@ -169,9 +162,7 @@
             "title": "A/B Testing Results Tracking",
             "description": "Implement A/B test tracking system with statistical significance calculations, confidence intervals, and conversion rate comparisons for optimization insights",
             "status": "pending",
-            "dependencies": [
-              1
-            ],
+            "dependencies": [1],
             "details": "",
             "testStrategy": ""
           },
@@ -180,9 +171,7 @@
             "title": "Performance Monitoring & Error Tracking",
             "description": "Build comprehensive performance monitoring system that tracks Core Web Vitals, API response times, assessment step duration, and real-time error tracking with alerting",
             "status": "pending",
-            "dependencies": [
-              1
-            ],
+            "dependencies": [1],
             "details": "",
             "testStrategy": ""
           },
@@ -191,12 +180,7 @@
             "title": "Analytics API Endpoints",
             "description": "Create REST API endpoints for analytics data retrieval including /api/analytics/metrics, /api/analytics/funnel, /api/analytics/events, and /api/analytics/ab-tests",
             "status": "pending",
-            "dependencies": [
-              2,
-              3,
-              5,
-              6
-            ],
+            "dependencies": [2, 3, 5, 6],
             "details": "",
             "testStrategy": ""
           },
@@ -205,15 +189,7 @@
             "title": "Comprehensive Analytics Testing Suite",
             "description": "Implement TDD test suite covering KPI validation, funnel analysis accuracy, A/B test statistical calculations, and real-time dashboard functionality",
             "status": "pending",
-            "dependencies": [
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7
-            ],
+            "dependencies": [1, 2, 3, 4, 5, 6, 7],
             "details": "",
             "testStrategy": ""
           }
@@ -237,10 +213,7 @@
         "details": "**LANDING PAGE IMPLEMENTATION:**\n\n**Hero Section Components:**\n- Value proposition messaging with executive-focused copy targeting 40%+ mobile users\n- Clear headline and subheadline optimization with A/B testing variants\n- Primary CTA button with conversion-optimized placement and design\n- Hero image/video background with performance optimization\n- Trust badges and security indicators prominently displayed\n\n**Social Proof & Trust Elements:**\n- Customer testimonials with executive quotes and company logos\n- Usage statistics and completion metrics display\n- Industry recognition badges and certifications\n- Privacy and security compliance indicators (SOC2, GDPR)\n- Executive briefing success stories and case studies\n\n**Sample Questions Preview:**\n- Interactive preview of 3-5 sample assessment questions\n- Category breakdown visualization showing AI Strategy, Technology, Risk Management, and Governance\n- Progress indicator and estimated completion time display\n- Mobile-optimized question format with touch-friendly interactions\n\n**A/B Testing Framework:**\n- Multiple CTA variants for headline, button text, and placement testing\n- Value proposition messaging variants for different audience segments\n- Landing page layout variants for conversion optimization\n- Analytics integration for conversion tracking and statistical significance\n\n**Mobile-First Implementation:**\n- Reference /workspaces/ai-scorecard/implementation-spec/user-experience-flow.md for mobile breakpoints\n- Touch-optimized interactions with 44px minimum touch targets\n- Performance optimization for mobile loading speeds\n- Progressive enhancement for cross-device compatibility\n\n**Conversion Elements:**\n- Multiple entry points to assessment with clear value messaging\n- Executive briefing qualification messaging and benefits\n- Social sharing capabilities for viral growth\n- Email capture for nurture sequences integration",
         "testStrategy": "**LANDING PAGE TDD TESTING:**\n\n**RED Phase - Conversion Optimization Tests:**\n- Test A/B testing framework with multiple CTA variants and statistical significance tracking\n- Validate hero section component rendering with mobile-first responsive breakpoints\n- Test social proof element display and trust indicator positioning\n- Verify sample questions preview functionality with category breakdown\n- Test conversion tracking integration with analytics system\n\n**Component Testing:**\n- Unit tests for hero section variants and CTA button optimization (90%+ coverage)\n- Integration tests for social proof data fetching and testimonial display\n- Mobile responsiveness tests across device breakpoints per user-experience-flow.md\n- Performance tests for page load speed optimization (<2s load time)\n\n**Conversion Flow Testing:**\n- End-to-end tests for landing page to assessment transition flow\n- A/B testing variant rotation and analytics event tracking validation\n- Email capture integration testing with automation system\n- Cross-browser compatibility testing for conversion optimization\n\n**Business KPI Validation:**\n- Landing page conversion rate testing (target >15% to assessment start)\n- Mobile conversion optimization validation for 40%+ executive mobile users\n- Value proposition messaging effectiveness testing with user behavior analytics",
         "status": "pending",
-        "dependencies": [
-          11,
-          12
-        ],
+        "dependencies": [11, 12],
         "priority": "medium",
         "subtasks": []
       },
@@ -251,9 +224,7 @@
         "details": "**SESSION MANAGEMENT IMPLEMENTATION:**\n\n**Session Storage & Persistence:**\n- Reference /workspaces/ai-scorecard/implementation-spec/api-specification.md for session endpoints (POST /api/sessions, GET /api/sessions/:id, PUT /api/sessions/:id)\n- Reference /workspaces/ai-scorecard/implementation-spec/database-design.md for session storage requirements and auto-save patterns\n- 24-hour session persistence with automatic cleanup after expiration\n- Browser storage integration (localStorage/sessionStorage) with server-side synchronization\n- Session token generation and validation with secure UUID implementation\n- Auto-save functionality every 30 seconds during assessment progress\n- Cross-tab session synchronization to prevent data loss\n\n**Recovery & Resume System:**\n- Incomplete assessment detection and recovery flow on page load\n- Resume capability from any point in the assessment with progress restoration\n- Session state restoration including current question, responses, and progress indicators\n- Graceful handling of expired sessions with user notification and restart options\n- Data integrity validation during recovery to ensure response consistency\n\n**Session API Implementation:**\n```typescript\n// Session management endpoints\nPOST /api/sessions - Create new session\nGET /api/sessions/:sessionId - Retrieve session data\nPUT /api/sessions/:sessionId - Update session progress\nDELETE /api/sessions/:sessionId - Cleanup expired session\n\n// Session data structure\ninterface SessionData {\n  sessionId: string;\n  userId?: string;\n  responses: Record<string, string>;\n  currentStep: number;\n  progress: number;\n  lastActivity: Date;\n  expiresAt: Date;\n  isComplete: boolean;\n}\n```\n\n**Auto-Save Integration:**\n- Real-time response saving with debounced API calls\n- Progress tracking with step-by-step persistence\n- Network error handling with offline queue support\n- Conflict resolution for concurrent session updates\n- Recovery notification system with user-friendly messaging",
         "testStrategy": "**SESSION MANAGEMENT TDD TESTING:**\n\n**RED Phase - Core Session Tests:**\n- Test session creation with unique ID generation and database persistence\n- Validate 24-hour expiration logic with automatic cleanup functionality\n- Test auto-save mechanism with 30-second intervals and debounced API calls\n- Verify session recovery flow from incomplete assessments with data integrity validation\n- Test cross-tab synchronization and conflict resolution scenarios\n\n**GREEN Phase - Recovery System Tests:**\n- Integration tests for session API endpoints with database operations\n- Browser storage synchronization tests with server-side validation\n- Network failure simulation with offline queue and recovery testing\n- Session expiration handling with user notification flows\n- Progressive recovery testing with various completion states\n\n**REFACTOR Phase - Performance & Edge Cases:**\n- Session cleanup job testing with bulk expiration handling\n- Concurrent session update testing with race condition prevention\n- Memory leak prevention in auto-save intervals and cleanup\n- Cross-browser compatibility testing for storage mechanisms\n- Load testing for high-volume session management scenarios",
         "status": "pending",
-        "dependencies": [
-          3
-        ],
+        "dependencies": [3],
         "priority": "medium",
         "subtasks": []
       },
@@ -264,11 +235,7 @@
         "details": "**A/B TESTING FRAMEWORK IMPLEMENTATION:**\n\n**Core A/B Testing Infrastructure:**\n- Statistical significance calculation engine with confidence intervals and p-value analysis\n- Variant management system for CTA buttons, subject lines, and landing page elements\n- Traffic splitting algorithm with weighted distribution and session persistence\n- Conversion tracking integration with analytics pipeline from Task 11\n- Real-time experiment monitoring dashboard with statistical power analysis\n- Experiment lifecycle management (setup, running, analysis, conclusion)\n\n**CTA Variant Testing System:**\n```typescript\ninterface ABTestVariant {\n  id: string;\n  name: string;\n  content: string;\n  weight: number; // 0-100 traffic allocation\n  conversions: number;\n  impressions: number;\n}\n\ninterface ABExperiment {\n  id: string;\n  name: string;\n  status: 'draft' | 'running' | 'paused' | 'completed';\n  variants: ABTestVariant[];\n  targetMetric: 'completion_rate' | 'executive_briefing_conversion';\n  minimumSampleSize: number;\n  confidenceLevel: number; // 95% default\n}\n```\n\n**Subject Line Testing Framework:**\n- Email subject line variant management integrated with Task 10 email system\n- Open rate and click-through rate tracking\n- Automated winner selection based on statistical significance\n- Subject line template system with personalization variables\n\n**Statistical Analysis Engine:**\n- Chi-square test implementation for conversion rate analysis\n- Bayesian A/B testing with credible intervals\n- Sample size calculator based on desired effect size and power\n- Multiple testing correction (Bonferroni) for multiple variants\n- Automated experiment stopping rules when significance is reached\n\n**Business KPI Integration:**\n- >70% completion rate optimization tracking\n- >15% executive briefing conversion monitoring\n- Real-time KPI dashboard with experiment impact analysis\n- Automated alerts for underperforming experiments\n\n**Experiment Configuration API:**\n```typescript\n// POST /api/experiments\n// GET /api/experiments/:id/results\n// PUT /api/experiments/:id/status\n// POST /api/experiments/:id/variants\n```\n\n**Database Schema Extensions:**\n```sql\nCREATE TABLE ab_experiments (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  name VARCHAR(255) NOT NULL,\n  description TEXT,\n  status experiment_status NOT NULL DEFAULT 'draft',\n  target_metric VARCHAR(100) NOT NULL,\n  confidence_level DECIMAL(3,2) DEFAULT 0.95,\n  minimum_sample_size INTEGER,\n  start_date TIMESTAMP,\n  end_date TIMESTAMP,\n  created_at TIMESTAMP DEFAULT NOW()\n);\n\nCREATE TABLE ab_variants (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  experiment_id UUID REFERENCES ab_experiments(id),\n  name VARCHAR(255) NOT NULL,\n  content JSONB NOT NULL,\n  traffic_weight INTEGER DEFAULT 50,\n  impressions INTEGER DEFAULT 0,\n  conversions INTEGER DEFAULT 0\n);\n\nCREATE TABLE ab_events (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  experiment_id UUID REFERENCES ab_experiments(id),\n  variant_id UUID REFERENCES ab_variants(id),\n  session_id VARCHAR(255),\n  event_type VARCHAR(50), -- 'impression', 'conversion'\n  timestamp TIMESTAMP DEFAULT NOW()\n);\n```",
         "testStrategy": "**A/B TESTING TDD IMPLEMENTATION:**\n\n**RED Phase - Core A/B Testing Tests:**\n- Test statistical significance calculation with known datasets and expected p-values\n- Validate traffic splitting algorithm ensures proper variant distribution\n- Test conversion tracking integration with analytics system from Task 11\n- Verify experiment lifecycle state management (draft→running→completed)\n- Test automated winner selection based on confidence intervals\n\n**Statistical Analysis Testing:**\n- Unit tests for chi-square test implementation with sample data\n- Test Bayesian A/B testing credible interval calculations\n- Validate sample size calculator with known effect sizes\n- Test multiple testing correction algorithms\n- Verify automated stopping rules trigger at correct significance levels\n\n**Business KPI Validation Tests:**\n- Test >70% completion rate tracking and optimization alerts\n- Validate >15% executive briefing conversion monitoring\n- Test real-time KPI dashboard data accuracy\n- Verify experiment impact analysis calculations\n\n**Integration Testing:**\n- Test CTA variant serving with session persistence across pages\n- Validate email subject line A/B testing integration with Task 10\n- Test experiment configuration API endpoints with proper validation\n- Verify database schema handles concurrent experiment data correctly\n\n**Performance & Reliability Tests:**\n- Load testing for traffic splitting under high concurrent users\n- Test experiment data consistency during database failover\n- Validate statistical calculations performance with large datasets\n- Test real-time dashboard updates with WebSocket connections\n\n**GREEN Phase Implementation:**\n- Implement statistical significance engine with 95% confidence intervals\n- Build variant management system with traffic allocation controls\n- Create conversion tracking pipeline integrated with existing analytics\n- Develop experiment monitoring dashboard with real-time KPI tracking",
         "status": "pending",
-        "dependencies": [
-          11,
-          10,
-          3
-        ],
+        "dependencies": [11, 10, 3],
         "priority": "medium",
         "subtasks": []
       },
@@ -279,12 +246,7 @@
         "details": "**PRODUCTION DEPLOYMENT IMPLEMENTATION:**\n\n**Vercel Deployment Configuration:**\n- Reference /workspaces/ai-scorecard/implementation-spec/deployment-guide.md for complete deployment requirements\n- Vercel project setup with optimized build configuration and edge function deployment\n- Environment variable management with production, staging, and preview configurations\n- Custom domain configuration with DNS settings and SSL certificate automation\n- Build optimization with static generation and incremental static regeneration (ISR)\n- Edge function deployment for API routes with regional optimization\n- Database connection pooling and production-ready connection strings\n\n**Environment & Configuration Management:**\n- Production environment variables with secure secret management\n- Database migration strategy for production deployment\n- CDN configuration for static assets and image optimization\n- Rate limiting and API throttling for production traffic\n- CORS configuration for production domains\n- Security headers implementation (CSP, HSTS, X-Frame-Options)\n\n**Health Monitoring & Alerting System:**\n- Application health checks with endpoint monitoring (/api/health)\n- Real-time performance monitoring with Core Web Vitals tracking\n- Error tracking and exception monitoring with Sentry integration\n- Database connection monitoring and query performance tracking\n- Uptime monitoring with 99.9% availability target\n- Automated alerting system for critical failures and performance degradation\n- Log aggregation and structured logging for production debugging\n- Monitoring dashboard with key metrics visualization\n\n**Production Readiness Checklist:**\n- Security audit and penetration testing preparation\n- Load testing with expected traffic patterns\n- Backup and disaster recovery procedures\n- Performance optimization with lighthouse scoring >90\n- Analytics integration validation for production traffic\n- Session management testing under production load",
         "testStrategy": "**PRODUCTION DEPLOYMENT TDD TESTING:**\n\n**RED Phase - Infrastructure Tests:**\n- Test Vercel deployment configuration with build verification and edge function validation\n- Validate environment variable loading across production, staging, and preview environments\n- Test custom domain configuration with DNS resolution and SSL certificate validation\n- Test database connection pooling under production load conditions\n- Validate health check endpoints return proper status codes and response times\n\n**Production Monitoring Tests:**\n- Test real-time performance monitoring captures Core Web Vitals accurately\n- Validate error tracking integration logs exceptions with proper context\n- Test alerting system triggers notifications for critical failures\n- Test uptime monitoring detects service interruptions within acceptable thresholds\n- Validate log aggregation captures structured logs for debugging\n\n**Load Testing & Performance Validation:**\n- Test application performance under expected production traffic loads\n- Validate session management handles concurrent users without degradation\n- Test database queries perform optimally under production data volumes\n- Test CDN serves static assets with proper caching headers\n- Validate analytics integration tracks production events accurately\n\n**Security & Compliance Testing:**\n- Test security headers implementation (CSP, HSTS, X-Frame-Options)\n- Validate CORS configuration allows only authorized domains\n- Test rate limiting prevents abuse and maintains service availability\n- Test SSL certificate auto-renewal and domain security configuration",
         "status": "pending",
-        "dependencies": [
-          11,
-          12,
-          14,
-          15
-        ],
+        "dependencies": [11, 12, 14, 15],
         "priority": "high",
         "subtasks": []
       },
@@ -295,12 +257,7 @@
         "details": "**COMPREHENSIVE ERROR HANDLING IMPLEMENTATION:**\n\n**Reference Implementation Specification:**\n- Primary source: /workspaces/ai-scorecard/implementation-spec/error-handling.md for all error patterns and resilience requirements\n- Critical vs non-critical error classification and handling strategies\n- Background retry systems with exponential backoff algorithms\n- User-friendly error messaging with contextual recovery actions\n\n**Error Classification System:**\n- Critical errors: Database failures, authentication issues, payment processing failures\n- Non-critical errors: Analytics tracking failures, non-essential API calls, optional feature failures\n- Transient errors: Network timeouts, rate limiting, temporary service unavailability\n- Permanent errors: Invalid input, authorization failures, resource not found\n\n**Retry Logic Implementation:**\n- Exponential backoff with jitter for transient failures (1s, 2s, 4s, 8s intervals)\n- Circuit breaker pattern for external service calls with failure threshold monitoring\n- Background retry queue for non-blocking error recovery with persistent storage\n- Maximum retry limits based on error type (3 for critical, 5 for non-critical)\n\n**User Experience Error Handling:**\n- Toast notifications for non-blocking errors with dismissible actions\n- Inline error states for form validation with specific field-level messaging\n- Fallback UI components for failed data loads with retry buttons\n- Loading states with timeout handling and graceful degradation patterns\n- Error boundary components for React component tree error isolation\n\n**Database & API Error Resilience:**\n- Database connection pooling with retry logic and connection health monitoring\n- API timeout configuration with progressive timeout increases\n- HubSpot integration error handling with fallback lead capture mechanisms\n- Session recovery for interrupted assessment flows with auto-save integration\n- Assessment data validation with client-side and server-side error handling\n\n**Monitoring & Alerting Integration:**\n- Error logging with structured logging format and severity classification\n- Error rate monitoring with threshold-based alerting for critical failures\n- Performance impact tracking for error handling overhead\n- User journey impact analysis for error-affected conversion funnels",
         "testStrategy": "**ERROR HANDLING TDD TESTING:**\n\n**RED Phase - Core Error Handling Tests:**\n- Test error classification system correctly categorizes critical vs non-critical errors\n- Validate exponential backoff retry logic with mock failures and timing verification\n- Test circuit breaker pattern opens/closes based on failure thresholds\n- Verify background retry queue persists and processes failed operations\n- Test user-facing error messages display contextually appropriate content\n\n**Integration Error Testing:**\n- Test database connection failure scenarios with connection pool exhaustion\n- Validate API timeout handling with simulated slow/failed responses\n- Test HubSpot integration failures with fallback lead capture mechanisms\n- Verify session recovery works correctly with interrupted assessment flows\n- Test assessment data validation catches and handles malformed submissions\n\n**User Experience Error Testing:**\n- Test toast notification system displays and dismisses correctly\n- Validate inline form error states show field-specific error messages\n- Test fallback UI components render when data loading fails\n- Verify loading states timeout gracefully with retry options\n- Test React error boundaries catch and isolate component failures\n\n**Monitoring & Performance Testing:**\n- Test error logging captures structured error data with proper severity levels\n- Validate error rate monitoring triggers alerts at configured thresholds\n- Test performance impact of error handling doesn't degrade user experience\n- Verify error tracking integration with analytics pipeline from Task 11",
         "status": "pending",
-        "dependencies": [
-          3,
-          11,
-          14,
-          16
-        ],
+        "dependencies": [3, 11, 14, 16],
         "priority": "high",
         "subtasks": []
       }

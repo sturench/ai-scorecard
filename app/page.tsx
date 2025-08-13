@@ -1,21 +1,21 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { ArrowRight, Shield, BarChart3, Users, CheckCircle } from "lucide-react";
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { ArrowRight, Shield, BarChart3, Users, CheckCircle } from 'lucide-react';
 
 export default function HomePage() {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex min-h-screen flex-col">
       {/* Header */}
-      <header className="px-4 lg:px-6 h-14 flex items-center border-b">
+      <header className="flex h-14 items-center border-b px-4 lg:px-6">
         <Link className="flex items-center justify-center" href="/">
-          <BarChart3 className="h-6 w-6 mr-2 text-primary" />
+          <BarChart3 className="mr-2 h-6 w-6 text-primary" />
           <span className="font-bold">AI Reality Check</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#features">
+          <Link className="text-sm font-medium underline-offset-4 hover:underline" href="#features">
             Features
           </Link>
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#about">
+          <Link className="text-sm font-medium underline-offset-4 hover:underline" href="#about">
             About
           </Link>
         </nav>
@@ -31,9 +31,9 @@ export default function HomePage() {
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
                   AI Reality Check Scorecard
                 </h1>
-                <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl dark:text-gray-400">
-                  Executive AI readiness assessment. Evaluate your organization's preparedness across 
-                  value assurance, customer safety, risk management, and governance.
+                <p className="mx-auto max-w-[700px] text-gray-500 dark:text-gray-400 md:text-xl">
+                  Executive AI readiness assessment. Evaluate your organization's preparedness
+                  across value assurance, customer safety, risk management, and governance.
                 </p>
               </div>
               <div className="space-x-4">
@@ -48,9 +48,12 @@ export default function HomePage() {
         </section>
 
         {/* Features Section */}
-        <section id="features" className="w-full py-12 md:py-24 lg:py-32 bg-gray-50 dark:bg-gray-900">
+        <section
+          id="features"
+          className="w-full bg-gray-50 py-12 dark:bg-gray-900 md:py-24 lg:py-32"
+        >
           <div className="container px-4 md:px-6">
-            <div className="grid gap-10 sm:px-10 md:gap-16 md:grid-cols-2">
+            <div className="grid gap-10 sm:px-10 md:grid-cols-2 md:gap-16">
               <div className="space-y-4">
                 <div className="inline-block rounded-lg bg-gray-100 px-3 py-1 text-sm dark:bg-gray-800">
                   Assessment Areas
@@ -58,8 +61,9 @@ export default function HomePage() {
                 <h2 className="lg:leading-tighter text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl xl:text-[3.4rem] 2xl:text-[3.75rem]">
                   Comprehensive AI Evaluation
                 </h2>
-                <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed dark:text-gray-400">
-                  Our assessment evaluates four critical dimensions of AI readiness to provide actionable insights for executives.
+                <p className="mx-auto max-w-[700px] text-gray-500 dark:text-gray-400 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                  Our assessment evaluates four critical dimensions of AI readiness to provide
+                  actionable insights for executives.
                 </p>
               </div>
               <div className="flex flex-col justify-center space-y-4">
@@ -69,7 +73,8 @@ export default function HomePage() {
                     <div>
                       <h3 className="font-bold">AI Value Assurance</h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Measure your organization's ability to deliver and capture value from AI initiatives.
+                        Measure your organization's ability to deliver and capture value from AI
+                        initiatives.
                       </p>
                     </div>
                   </div>
@@ -114,8 +119,9 @@ export default function HomePage() {
                 <h2 className="text-3xl font-bold tracking-tighter md:text-4xl">
                   Ready to Assess Your AI Readiness?
                 </h2>
-                <p className="max-w-[600px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed dark:text-gray-400">
-                  Take our comprehensive assessment and receive personalized recommendations for your AI journey.
+                <p className="max-w-[600px] text-gray-500 dark:text-gray-400 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                  Take our comprehensive assessment and receive personalized recommendations for
+                  your AI journey.
                 </p>
               </div>
               <div className="w-full max-w-sm space-y-2">
@@ -134,15 +140,15 @@ export default function HomePage() {
       </main>
 
       {/* Footer */}
-      <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
+      <footer className="flex w-full shrink-0 flex-col items-center gap-2 border-t px-4 py-6 sm:flex-row md:px-6">
         <p className="text-xs text-gray-500 dark:text-gray-400">
           © 2024 AI Reality Check Scorecard. All rights reserved.
         </p>
-        <nav className="sm:ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-xs hover:underline underline-offset-4" href="/privacy">
+        <nav className="flex gap-4 sm:ml-auto sm:gap-6">
+          <Link className="text-xs underline-offset-4 hover:underline" href="/privacy">
             Privacy Policy
           </Link>
-          <Link className="text-xs hover:underline underline-offset-4" href="/terms">
+          <Link className="text-xs underline-offset-4 hover:underline" href="/terms">
             Terms of Service
           </Link>
         </nav>

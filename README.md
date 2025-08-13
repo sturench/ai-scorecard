@@ -7,7 +7,7 @@ Executive AI readiness assessment platform built with Next.js 14.2, TypeScript, 
 The AI Reality Check Scorecard is designed for executives and decision-makers to assess their organization's readiness for AI implementation. The platform evaluates:
 
 - **AI Value Assurance** - Ability to deliver and capture value from AI initiatives
-- **Customer-Safe AI** - Safeguards and protocols for customer-facing AI deployments  
+- **Customer-Safe AI** - Safeguards and protocols for customer-facing AI deployments
 - **Model Risk & Compliance** - Risk management frameworks and regulatory compliance
 - **Implementation Governance** - Organizational structures for AI implementation
 
@@ -22,17 +22,20 @@ The AI Reality Check Scorecard is designed for executives and decision-makers to
 ### Environment Setup
 
 1. Clone the repository:
+
 ```bash
 git clone <repository-url>
 cd ai-scorecard
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
 3. Set up environment variables:
+
 ```bash
 cp .env.example .env.local
 ```
@@ -53,12 +56,14 @@ FROM_EMAIL="your-email@domain.com"
 ```
 
 4. Initialize the database:
+
 ```bash
 npm run db:generate
 npm run db:migrate
 ```
 
 5. Start the development server:
+
 ```bash
 npm run dev
 ```
@@ -155,7 +160,7 @@ npm run format
 
 - **Champion** (80-100): Excellent AI readiness
 - **Builder** (60-79): Good foundation, some gaps
-- **Risk Zone** (40-59): Significant preparation needed  
+- **Risk Zone** (40-59): Significant preparation needed
 - **Alert** (20-39): Major gaps, high risk
 - **Crisis** (0-19): Immediate attention required
 
@@ -164,6 +169,7 @@ npm run format
 ### HubSpot CRM
 
 Automatic lead qualification and deal creation:
+
 - Contact creation/updates with assessment scores
 - Executive briefing deal generation for qualified leads
 - Custom properties for AI assessment data
@@ -172,6 +178,7 @@ Automatic lead qualification and deal creation:
 ### Email Automation
 
 Personalized results delivery:
+
 - React Email templates with assessment results
 - A/B testing for subject lines and content
 - Delivery tracking and analytics
@@ -245,7 +252,7 @@ GOOGLE_SITE_VERIFICATION=your_verification_code
 ### Built-in Tracking
 
 - Assessment completion rates
-- Step abandonment analysis  
+- Step abandonment analysis
 - Score distribution analytics
 - Email engagement metrics
 - Performance monitoring
@@ -262,16 +269,19 @@ GOOGLE_SITE_VERIFICATION=your_verification_code
 ### Common Issues
 
 **Database Connection Issues**
+
 - Verify PostgreSQL is running
 - Check DATABASE_URL format
 - Ensure database exists and is accessible
 
 **HubSpot Sync Failures**
+
 - Verify HUBSPOT_ACCESS_TOKEN permissions
 - Check rate limiting (100 requests per 10 seconds)
 - Review sync queue in database
 
 **Email Delivery Issues**
+
 - Confirm RESEND_API_KEY is valid
 - Check FROM_EMAIL domain verification
 - Monitor email event logs

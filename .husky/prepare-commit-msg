@@ -1,6 +1,3 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
 # Auto-prefix commit messages with conventional commit format for certain branch patterns
 BRANCH_NAME=$(git symbolic-ref --short HEAD 2>/dev/null)
 

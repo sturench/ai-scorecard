@@ -1,14 +1,17 @@
 # Top-level task kickoff - generate subtasks
 
 To invoke this slash command:
+
 ```
 /task-kickoff 14
 ```
 
 ## Purpose
+
 This command executes the complete TaskMaster kickoff procedure for top-level tasks, generating subtasks and preparing for implementation.
 
 ## Task ID Processing
+
 - **Task ID**: {0} (e.g., 14)
 - **Task Type**: Top-level task (NO dots in ID)
 - **Validation**: REJECT if subtask format (e.g., 14.1) is provided
@@ -16,6 +19,7 @@ This command executes the complete TaskMaster kickoff procedure for top-level ta
 ## Pre-Flight Validation
 
 **If subtask ID provided (contains dot)**:
+
 ```
 ❌ ERROR: This command is for top-level tasks only (format: 123).
 You provided: {0} (subtask format)
@@ -26,11 +30,13 @@ Did you mean to use:
 
 Please confirm your intent.
 ```
+
 **⚠️ STOP and wait for user clarification**
 
 ## Step 1: Check Existing Subtasks
 
 1. **Review Task Details**
+
    ```bash
    tm show {0}
    ```
@@ -38,8 +44,9 @@ Please confirm your intent.
 2. **Evaluate Existing Subtasks**
 
 **If subtasks exist**:
+
 ```
-⚠️ Task {0} already has subtasks. 
+⚠️ Task {0} already has subtasks.
 
 Current subtasks found:
 [List existing subtasks with status]
@@ -51,17 +58,21 @@ Do you want to:
 
 Please provide clear instructions.
 ```
+
 **⚠️ STOP and wait for user decision**
 
 **If user chooses "Preserve"**:
+
 ```
 Task {0} subtasks preserved. Please use /subtask-kickoff for individual subtask execution.
 
 Next recommended action: /subtask-kickoff {0}.1
 ```
+
 **⚠️ STOP - Do not proceed with kickoff**
 
 **If user chooses "Clear" or no subtasks exist**:
+
 ```bash
 tm clear-subtasks --id={0}
 ```
@@ -89,6 +100,7 @@ tm clear-subtasks --id={0}
    ```
 
 **If clarification needed**:
+
 ```
 Based on my analysis of Task {0}, I need clarification on:
 - [Specific question 1]
@@ -97,6 +109,7 @@ Based on my analysis of Task {0}, I need clarification on:
 
 Please provide guidance before I proceed with subtask generation.
 ```
+
 **⚠️ STOP and wait for clarification**
 
 ## Step 3: Update Task Context (OPTIONAL - Skip to avoid duplicate subtasks)
@@ -104,6 +117,7 @@ Please provide guidance before I proceed with subtask generation.
 ⚠️ **WARNING: This step can cause duplicate subtask generation.**
 
 **Only use if you need to add critical context that wasn't captured during analysis:**
+
 ```bash
 tm update-task --id={0} --prompt="ONLY critical missing context:
 - [Critical missing requirement]
@@ -115,11 +129,13 @@ tm update-task --id={0} --prompt="ONLY critical missing context:
 ## Step 4: Analyze Complexity
 
 **Run complexity analysis with research**:
+
 ```bash
 tm analyze-complexity --research --id={0}
 ```
 
 This updates `.taskmaster/task-complexity-report.json` with:
+
 - Implementation complexity assessment
 - Resource requirements
 - Risk factors
@@ -128,11 +144,13 @@ This updates `.taskmaster/task-complexity-report.json` with:
 ## Step 5: Expand Task into Subtasks
 
 **Generate subtasks based on analysis**:
+
 ```bash
 tm expand --id={0}
 ```
 
 **Monitor expansion results**:
+
 - Verify subtasks were created successfully
 - Check for appropriate granularity
 - Ensure logical task flow
@@ -140,6 +158,7 @@ tm expand --id={0}
 ## Step 6: Generate Subtask Details
 
 **Create comprehensive task documentation**:
+
 ```bash
 tm generate
 ```
@@ -149,6 +168,7 @@ This updates all TaskMaster markdown files with the new subtask structure.
 ## Step 7: Review and Validate
 
 1. **Analyze Generated Subtasks**
+
    ```bash
    tm show {0}
    tm list --with-subtasks
@@ -157,6 +177,7 @@ This updates all TaskMaster markdown files with the new subtask structure.
 2. **Quality Assessment**
 
 **If plan looks reasonable**:
+
 ```
 ✅ Task {0} subtask plan generated successfully:
 
@@ -164,7 +185,7 @@ This updates all TaskMaster markdown files with the new subtask structure.
 
 This plan appropriately covers the original task because:
 - [Reason 1: Complete coverage of requirements]
-- [Reason 2: Logical breakdown and sequencing]  
+- [Reason 2: Logical breakdown and sequencing]
 - [Reason 3: Appropriate granularity for execution]
 - [Reason 4: Clear dependencies and integration points]
 
@@ -180,6 +201,7 @@ Do you agree with this plan and want to proceed with implementation?
 ```
 
 **If plan seems inadequate**:
+
 ```
 ⚠️ Task {0} subtask plan has concerns:
 
@@ -188,7 +210,7 @@ Generated subtasks:
 
 Identified issues:
 - [Specific gap 1]: [What's missing]
-- [Specific gap 2]: [Why this is problematic]  
+- [Specific gap 2]: [Why this is problematic]
 - [Specific gap 3]: [How this affects quality]
 
 The plan appears to miss:
@@ -208,19 +230,20 @@ Please specify your preferred approach.
 **If user chooses "Redo from scratch"**:
 
 1. **Update task with enhanced context**:
+
    ```bash
    tm update-task --id={0} --prompt="Enhanced context for retry:
-   
+
    Previous attempt inadequacies:
    - [Why first attempt failed]
    - [What was missing from analysis]
    - [Gaps in understanding]
-   
+
    Additional requirements discovered:
    - [New requirement 1]
    - [New constraint 2]
    - [New integration need 3]
-   
+
    User clarifications and corrections:
    - [User feedback 1]
    - [User correction 2]
@@ -228,6 +251,7 @@ Please specify your preferred approach.
    ```
 
 2. **Clear and restart**:
+
    ```bash
    tm clear-subtasks --id={0}
    ```
@@ -258,6 +282,7 @@ Ready to begin implementation!
 ## Error Handling
 
 **If TaskMaster commands fail**:
+
 ```
 ❌ Error executing TaskMaster command: [command]
 Error details: [error message]
@@ -272,6 +297,7 @@ Should I attempt recovery or do you want to investigate manually?
 ```
 
 **If task analysis reveals blockers**:
+
 ```
 🚧 Task {0} has implementation blockers:
 
@@ -298,6 +324,7 @@ Should I document these blockers and pause kickoff, or would you like to address
 ## Integration with Implementation Strategy
 
 This command prepares Task {0} for the orchestrated implementation approach:
+
 - Generates quality subtasks aligned with project goals
 - Sets up proper context for /subtask-kickoff execution
 - Enables /peer-review validation after each subtask

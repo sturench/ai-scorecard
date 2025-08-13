@@ -1,6 +1,3 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
 # Only run on branch checkouts (not file checkouts)
 if [ $3 = 1 ]; then
   echo "🔄 Branch checkout detected..."
