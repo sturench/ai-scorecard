@@ -4,7 +4,7 @@ const nextConfig = {
   swcMinify: true,
   poweredByHeader: false,
   compress: true,
-  
+
   images: {
     formats: ['image/webp', 'image/avif'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
@@ -15,17 +15,18 @@ const nextConfig = {
   },
 
   experimental: {
-    optimizeCss: true,
     scrollRestoration: true,
     serverComponentsExternalPackages: ['@prisma/client'],
   },
 
   webpack: (config, { dev, isServer }) => {
-    // Performance optimizations
+    // Performance optimizations for production builds
     if (!dev && !isServer) {
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        '@/lib/utils': require.resolve('./lib/utils'),
+      // Add any production-specific webpack optimizations here
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
       };
     }
 
