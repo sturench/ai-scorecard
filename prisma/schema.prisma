@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -15,11 +15,11 @@ model Assessment {
   sessionId String   @unique
   
   // Assessment response data
-  responses      Json     // {"q1": "A", "q2": "B", ...} - all question responses
+  responses      String   // JSON string: {"q1": "A", "q2": "B", ...} - all question responses
   totalScore     Int?     // 0-100 overall calculated score
-  scoreBreakdown Json?    // {"valueAssurance": 75, "customerSafe": 80, "riskCompliance": 65, "governance": 70}
+  scoreBreakdown String?  // JSON string: {"valueAssurance": 75, "customerSafe": 80, "riskCompliance": 65, "governance": 70}
   scoreCategory  String?  // 'champion', 'builder', 'risk_zone', 'alert', 'crisis'
-  recommendations String[] // Array of personalized recommendation strings
+  recommendations String? // JSON string array of personalized recommendation strings
   
   // Progressive user data capture (scrubbed after 30 days for privacy)
   email          String?
@@ -48,8 +48,8 @@ model Assessment {
   
   // Analytics and performance data (preserved after email scrub)
   completionTimeSeconds Int?     // Total time spent completing assessment
-  stepTimings          Json?     // {"step1": 45, "step2": 67, ...} time per step in seconds
-  browserInfo          Json?     // {"userAgent": "...", "viewport": {"width": 1920, "height": 1080}}
+  stepTimings          String?   // JSON string: {"step1": 45, "step2": 67, ...} time per step in seconds
+  browserInfo          String?   // JSON string: {"userAgent": "...", "viewport": {"width": 1920, "height": 1080}}
   referrerSource       String?   // Where the user came from
   abTestVariant        String?   // A/B test variant assignment
   deviceType           String?   // 'mobile', 'tablet', 'desktop'
@@ -82,7 +82,7 @@ model AssessmentSession {
   // Session state tracking
   currentStep   Int      @default(0)        // Current step in assessment (0-4)
   totalSteps    Int      @default(4)        // Total number of steps
-  responses     Json     @default("{}")     // Current responses {"q1": "A", "q2": "B"}
+  responses     String   @default("{}")     // JSON string: Current responses {"q1": "A", "q2": "B"}
   
   // Progressive data capture during session
   email         String?
@@ -93,7 +93,7 @@ model AssessmentSession {
   // Session lifecycle
   startedAt     DateTime @default(now())
   lastActivity  DateTime @default(now())    // Updated on each interaction
-  expiresAt     DateTime @default(dbgenerated("(CURRENT_TIMESTAMP + INTERVAL '24 hours')"))
+  expiresAt     DateTime
   isComplete    Boolean  @default(false)
   
   // Analytics
@@ -113,7 +113,7 @@ model HubspotSyncQueue {
   assessmentId  String
   
   // Retry logic
-  payload       Json     // Assessment data to sync
+  payload       String   // JSON string: Assessment data to sync
   retryCount    Int      @default(0)
   maxRetries    Int      @default(5)
   nextRetryAt   DateTime @default(now())
@@ -147,7 +147,7 @@ model EmailEvent {
   
   // Event tracking
   eventType     String   // 'sent', 'delivered', 'opened', 'clicked', 'bounced', 'complaint'
-  eventData     Json?    // Additional event metadata
+  eventData     String?  // JSON string: Additional event metadata
   timestamp     DateTime @default(now())
   
   // A/B testing
@@ -155,7 +155,7 @@ model EmailEvent {
   templateVariant String?
   
   // Analytics aggregation helper
-  dateKey       String   @default(dbgenerated("TO_CHAR(CURRENT_TIMESTAMP, 'YYYY-MM-DD')"))
+  dateKey       String
   
   @@index([messageId])
   @@index([recipientHash])
@@ -169,7 +169,7 @@ model AnalyticsEvent {
   
   // Event identification
   eventType   String   // 'page_view', 'step_completed', 'assessment_started', 'assessment_completed'
-  eventData   Json     // Event-specific data
+  eventData   String   // JSON string: Event-specific data
   
   // Session and user tracking (anonymous)
   sessionHash String   // SHA256 hash of session ID
@@ -183,8 +183,8 @@ model AnalyticsEvent {
   
   // Timing
   timestamp   DateTime @default(now())
-  dateKey     String   @default(dbgenerated("TO_CHAR(CURRENT_TIMESTAMP, 'YYYY-MM-DD')"))
-  hourKey     Int      @default(dbgenerated("EXTRACT(HOUR FROM CURRENT_TIMESTAMP)"))
+  dateKey     String
+  hourKey     Int
   
   @@index([eventType, timestamp])
   @@index([dateKey, eventType])
