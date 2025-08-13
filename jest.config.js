@@ -51,7 +51,10 @@ const config = {
   // Coverage settings
   collectCoverage: false,
   collectCoverageFrom: [
-    '**/*.{ts,tsx}',
+    'app/**/*.{js,jsx,ts,tsx}',
+    'components/**/*.{js,jsx,ts,tsx}',
+    'lib/**/*.{js,jsx,ts,tsx}',
+    'hooks/**/*.{js,jsx,ts,tsx}',
     '!**/*.d.ts',
     '!**/node_modules/**',
     '!**/.next/**',
@@ -60,9 +63,21 @@ const config = {
     '!**/coverage/**',
     '!**/*.config.{js,ts}',
     '!**/jest.setup.js',
+    '!**/layout.tsx',
+    '!**/loading.tsx',
+    '!**/not-found.tsx',
+    '!**/error.tsx',
   ],
   coverageReporters: ['text', 'lcov', 'html'],
   coverageDirectory: 'coverage',
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
+  },
 
   // Test environment setup
   testEnvironmentOptions: {
