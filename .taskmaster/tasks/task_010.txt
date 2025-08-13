@@ -1,0 +1,702 @@
+# Task ID: 10
+# Title: Email Automation & Templates
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Build comprehensive email automation system with React Email templates, delivery tracking, A/B testing for subject lines, and follow-up sequences. Implement robust email service integration with Resend/SendGrid and TDD-driven template development with incomplete assessment recovery emails and optimized send timing.
+# Details:
+**EMAIL AUTOMATION IMPLEMENTATION:**
+
+**Email Service Architecture:**
+- React Email for template development with TypeScript support
+- Resend or SendGrid integration with failover capability
+- Email delivery tracking and bounce handling
+- A/B testing framework for subject lines and content
+- Follow-up sequence automation based on engagement
+- Incomplete assessment recovery email sequences
+- Send timing optimization based on recipient behavior
+
+**Email Template Reference:**
+- Primary source: /workspaces/ai-scorecard/implementation-spec/email-templates.md
+- Contains ALL email types including follow-up sequence timing specifications
+- Defines complete template structure for assessment results, reminders, and recovery emails
+- Specifies A/B testing variants for all email types
+
+**Email Templates with React Email:**
+```typescript
+// emails/assessment-results.tsx
+interface AssessmentResultsEmailProps {
+  firstName?: string;
+  totalScore: number;
+  scoreCategory: ScoreCategory;
+  scoreBreakdown: ScoreBreakdown;
+  recommendations: string[];
+  resultsUrl: string;
+  unsubscribeUrl: string;
+  abTestVariant: 'standard' | 'personalized' | 'urgent';
+}
+
+export function AssessmentResultsEmail({
+  firstName,
+  totalScore,
+  scoreCategory,
+  scoreBreakdown,
+  recommendations,
+  resultsUrl,
+  unsubscribeUrl,
+  abTestVariant
+}: AssessmentResultsEmailProps) {
+  const greeting = firstName ? `Hi ${firstName}` : 'Hello';
+  const categoryColor = getCategoryColor(scoreCategory);
+  const categoryLabel = getCategoryLabel(scoreCategory);
+
+  return (
+    <Html>
+      <Head />
+      <Preview>
+        Your AI Reality Check results are ready - {categoryLabel} (Score: {totalScore}/100)
+      </Preview>
+      <Body style={main}>
+        <Container style={container}>
+          {/* Header */}
+          <Section style={header}>
+            <Img
+              src="https://aireadycheck.com/logo.png"
+              width="150"
+              height="40"
+              alt="AI Reality Check"
+              style={logo}
+            />
+          </Section>
+
+          {/* Results Summary */}
+          <Section style={content}>
+            <Heading style={h1}>{greeting}, Your AI Reality Check Results Are Ready</Heading>
+            
+            <div style={{ textAlign: 'center', margin: '32px 0' }}>
+              <div style={{
+                ...scoreCircle,
+                borderColor: categoryColor,
+                backgroundColor: `${categoryColor}10`
+              }}>
+                <Text style={{ ...scoreText, color: categoryColor }}>
+                  {totalScore}/100
+                </Text>
+              </div>
+              <Text style={{ ...categoryText, color: categoryColor }}>
+                {categoryLabel}
+              </Text>
+            </div>
+
+            {abTestVariant === 'urgent' && scoreCategory === 'crisis' && (
+              <Section style={urgentBanner}>
+                <Text style={urgentText}>
+                  ⚠️ Critical Issues Detected - Immediate Action Recommended
+                </Text>
+              </Section>
+            )}
+
+            <Text style={paragraph}>
+              Based on your responses across 4 critical AI readiness areas, 
+              we've identified specific opportunities to strengthen your AI implementation.
+            </Text>
+
+            {/* Score Breakdown */}
+            <Section style={scoreBreakdownSection}>
+              <Heading style={h2}>Your Score Breakdown</Heading>
+              {Object.entries(scoreBreakdown).map(([area, score]) => (
+                <Row key={area} style={scoreRow}>
+                  <Column style={scoreLabel}>
+                    <Text style={scoreAreaText}>
+                      {getAreaDisplayName(area)}
+                    </Text>
+                  </Column>
+                  <Column style={scoreValue}>
+                    <Text style={{ ...scoreValueText, color: getScoreColor(score) }}>
+                      {score}%
+                    </Text>
+                  </Column>
+                </Row>
+              ))}
+            </Section>
+
+            {/* Top Recommendations */}
+            <Section style={recommendationsSection}>
+              <Heading style={h2}>Priority Recommendations</Heading>
+              {recommendations.slice(0, 3).map((rec, index) => (
+                <Text key={index} style={recommendationItem}>
+                  • {rec}
+                </Text>
+              ))}
+            </Section>
+
+            {/* CTA */}
+            <Section style={ctaSection}>
+              <Button 
+                href={resultsUrl}
+                style={{ ...button, backgroundColor: categoryColor }}
+              >
+                View Complete Results & Action Plan
+              </Button>
+            </Section>
+
+            {abTestVariant === 'personalized' && (
+              <Section style={personalizedSection}>
+                <Text style={personalizedText}>
+                  We've prepared additional insights specific to your {scoreCategory} category. 
+                  These include industry benchmarks and step-by-step improvement strategies.
+                </Text>
+              </Section>
+            )}
+          </Section>
+
+          {/* Footer */}
+          <Section style={footer}>
+            <Text style={footerText}>
+              This assessment was completed on {new Date().toLocaleDateString()}.
+              <br />
+              <Link href={unsubscribeUrl} style={unsubscribeLink}>
+                Unsubscribe
+              </Link>
+            </Text>
+          </Section>
+        </Container>
+      </Body>
+    </Html>
+  );
+}
+```
+
+**Incomplete Assessment Recovery Email Template:**
+```typescript
+// emails/incomplete-recovery.tsx
+interface IncompleteRecoveryEmailProps {
+  firstName?: string;
+  resumeUrl: string;
+  questionsCompleted: number;
+  totalQuestions: number;
+  unsubscribeUrl: string;
+  abTestVariant: 'gentle' | 'urgent' | 'value_focused';
+  timingOptimized: boolean;
+}
+
+export function IncompleteRecoveryEmail({
+  firstName,
+  resumeUrl,
+  questionsCompleted,
+  totalQuestions,
+  unsubscribeUrl,
+  abTestVariant,
+  timingOptimized
+}: IncompleteRecoveryEmailProps) {
+  const progress = Math.round((questionsCompleted / totalQuestions) * 100);
+  const remainingQuestions = totalQuestions - questionsCompleted;
+  
+  const subjectLines = {
+    gentle: [
+      `Your AI Reality Check is ${progress}% complete`,
+      `${firstName || 'Hi there'}, finish your AI assessment in 2 minutes`,
+      `Complete your AI readiness evaluation`
+    ],
+    urgent: [
+      `⏰ Don't lose your AI assessment progress (${progress}% done)`,
+      `${firstName || 'Executive'}, your AI evaluation expires soon`,
+      `🚨 Complete your AI Reality Check before it expires`
+    ],
+    value_focused: [
+      `Get your personalized AI strategy report`,
+      `${firstName || 'Hi'}, your AI improvement roadmap is waiting`,
+      `Unlock your AI readiness insights (${remainingQuestions} questions left)`
+    ]
+  };
+
+  return (
+    <Html>
+      <Head />
+      <Preview>
+        Complete your AI Reality Check assessment - only {remainingQuestions} questions remaining
+      </Preview>
+      <Body style={main}>
+        <Container style={container}>
+          <Section style={header}>
+            <Img
+              src="https://aireadycheck.com/logo.png"
+              width="150"
+              height="40"
+              alt="AI Reality Check"
+              style={logo}
+            />
+          </Section>
+
+          <Section style={content}>
+            <Heading style={h1}>
+              {firstName ? `Hi ${firstName}` : 'Hello'}, You're Almost Done!
+            </Heading>
+            
+            <div style={{ textAlign: 'center', margin: '32px 0' }}>
+              <div style={progressBar}>
+                <div style={{ 
+                  ...progressFill, 
+                  width: `${progress}%`,
+                  backgroundColor: timingOptimized ? '#10B981' : '#3B82F6'
+                }}>
+                </div>
+              </div>
+              <Text style={progressText}>
+                {progress}% Complete - Only {remainingQuestions} questions left
+              </Text>
+            </div>
+
+            {abTestVariant === 'value_focused' && (
+              <Section style={valueProposition}>
+                <Text style={valueText}>
+                  🎯 Your personalized AI strategy report is ready to generate
+                  <br />
+                  📊 Get industry benchmarks and actionable recommendations
+                  <br />
+                  ⚡ Takes less than 2 minutes to complete
+                </Text>
+              </Section>
+            )}
+
+            <Text style={paragraph}>
+              You're so close to getting your complete AI Reality Check results and 
+              personalized improvement recommendations.
+            </Text>
+
+            {timingOptimized && (
+              <Section style={timingNote}>
+                <Text style={timingText}>
+                  📅 This email was sent at your optimal engagement time based on previous interactions
+                </Text>
+              </Section>
+            )}
+
+            <Section style={ctaSection}>
+              <Button href={resumeUrl} style={primaryButton}>
+                Complete My Assessment
+              </Button>
+            </Section>
+
+            {abTestVariant === 'urgent' && (
+              <Section style={urgencySection}>
+                <Text style={urgencyText}>
+                  ⚠️ Your assessment session will expire in 48 hours. 
+                  Complete it now to secure your results.
+                </Text>
+              </Section>
+            )}
+          </Section>
+
+          <Section style={footer}>
+            <Text style={footerText}>
+              <Link href={unsubscribeUrl} style={unsubscribeLink}>
+                Unsubscribe
+              </Link>
+            </Text>
+          </Section>
+        </Container>
+      </Body>
+    </Html>
+  );
+}
+```
+
+**Enhanced Email Service with A/B Testing & Timing Optimization:**
+```typescript
+// lib/services/email.ts
+export class EmailService {
+  private resend: Resend;
+  private fallbackProvider?: SendGridService;
+  private timingOptimizer: SendTimingOptimizer;
+  private abTestTracker: ABTestTracker;
+  
+  constructor() {
+    this.resend = new Resend(process.env.RESEND_API_KEY);
+    if (process.env.SENDGRID_API_KEY) {
+      this.fallbackProvider = new SendGridService(process.env.SENDGRID_API_KEY);
+    }
+    this.timingOptimizer = new SendTimingOptimizer();
+    this.abTestTracker = new ABTestTracker();
+  }
+
+  async sendIncompleteRecoveryEmail(
+    email: string,
+    templateData: IncompleteRecoveryEmailData,
+    options: EmailOptions = {}
+  ): Promise<EmailResult> {
+    const abTestVariant = this.getRecoveryABTestVariant(email, templateData);
+    const optimalTiming = await this.timingOptimizer.getOptimalSendTime(email);
+    const timingOptimized = optimalTiming.confidence > 0.7;
+    
+    // Schedule for optimal time if significant improvement expected
+    if (timingOptimized && optimalTiming.recommendedTime > new Date()) {
+      return await this.scheduleEmail({
+        type: 'incomplete_recovery',
+        email,
+        templateData: { ...templateData, timingOptimized: true },
+        abTestVariant,
+        scheduledFor: optimalTiming.recommendedTime
+      });
+    }
+
+    const subject = this.generateRecoverySubject(templateData, abTestVariant);
+    
+    try {
+      const html = render(IncompleteRecoveryEmail({
+        ...templateData,
+        abTestVariant,
+        timingOptimized
+      }));
+      const text = render(IncompleteRecoveryEmail({
+        ...templateData,
+        abTestVariant,
+        timingOptimized
+      }), { plainText: true });
+
+      const result = await this.resend.emails.send({
+        from: 'Stuart Rench <stuart@aireadycheck.com>',
+        to: email,
+        subject,
+        html,
+        text,
+        headers: {
+          'X-Assessment-ID': templateData.assessmentId,
+          'X-AB-Variant': abTestVariant,
+          'X-Timing-Optimized': timingOptimized.toString(),
+          'X-Email-Type': 'incomplete_recovery',
+          'List-Unsubscribe': `<${templateData.unsubscribeUrl}>`
+        },
+        tags: [
+          { name: 'type', value: 'incomplete_recovery' },
+          { name: 'variant', value: abTestVariant },
+          { name: 'timing_optimized', value: timingOptimized.toString() },
+          { name: 'progress', value: `${templateData.questionsCompleted}/${templateData.totalQuestions}` }
+        ]
+      });
+
+      await this.trackEmailSent(email, 'incomplete_recovery', result.id, abTestVariant, {
+        timingOptimized,
+        progress: templateData.questionsCompleted / templateData.totalQuestions
+      });
+      
+      await this.abTestTracker.recordVariant(email, 'incomplete_recovery', abTestVariant);
+      
+      return { success: true, messageId: result.id, provider: 'resend' };
+
+    } catch (error) {
+      console.error('Recovery email send failed:', error);
+      
+      if (this.fallbackProvider) {
+        try {
+          const fallbackResult = await this.fallbackProvider.send({
+            to: email,
+            subject,
+            html,
+            text,
+            templateData,
+            abTestVariant
+          });
+          
+          await this.trackEmailSent(email, 'incomplete_recovery', fallbackResult.messageId, abTestVariant);
+          
+          return { success: true, messageId: fallbackResult.messageId, provider: 'sendgrid' };
+        } catch (fallbackError) {
+          console.error('Fallback recovery email send failed:', fallbackError);
+        }
+      }
+
+      await this.queueEmailForRetry(email, templateData, options);
+      throw new Error(`Recovery email delivery failed: ${error.message}`);
+    }
+  }
+
+  private getRecoveryABTestVariant(
+    email: string, 
+    data: IncompleteRecoveryEmailData
+  ): RecoveryABTestVariant {
+    const hash = crypto.createHash('md5').update(email + data.assessmentId).digest('hex');
+    const hashValue = parseInt(hash.substring(0, 8), 16);
+    const percentage = hashValue % 100;
+    
+    // Weight variants based on completion progress
+    const progress = data.questionsCompleted / data.totalQuestions;
+    
+    if (progress < 0.3) {
+      // Early abandonment - focus on value
+      if (percentage < 50) return 'value_focused';
+      if (percentage < 80) return 'gentle';
+      return 'urgent';
+    } else {
+      // High progress - gentle nudge preferred
+      if (percentage < 60) return 'gentle';
+      if (percentage < 85) return 'value_focused';
+      return 'urgent';
+    }
+  }
+
+  private generateRecoverySubject(
+    data: IncompleteRecoveryEmailData, 
+    variant: RecoveryABTestVariant
+  ): string {
+    const progress = Math.round((data.questionsCompleted / data.totalQuestions) * 100);
+    const remaining = data.totalQuestions - data.questionsCompleted;
+    
+    const subjectVariants = {
+      gentle: [
+        `Your AI Reality Check is ${progress}% complete`,
+        `${data.firstName || 'Hi there'}, finish your AI assessment in 2 minutes`,
+        `Complete your AI readiness evaluation`
+      ],
+      urgent: [
+        `⏰ Don't lose your AI assessment progress (${progress}% done)`,
+        `${data.firstName || 'Executive'}, your AI evaluation expires soon`,
+        `🚨 Complete your AI Reality Check before it expires`
+      ],
+      value_focused: [
+        `Get your personalized AI strategy report`,
+        `${data.firstName || 'Hi'}, your AI improvement roadmap is waiting`,
+        `Unlock your AI readiness insights (${remaining} questions left)`
+      ]
+    };
+
+    const variants = subjectVariants[variant];
+    const variantIndex = this.getVariantIndex(data.email, variants.length);
+    
+    return variants[variantIndex];
+  }
+}
+```
+
+**Follow-up Email Automation with Recovery Sequences:**
+```typescript
+// lib/automation/email-sequences.ts
+export class EmailSequenceAutomation {
+  private emailService: EmailService;
+  private scheduleService: ScheduleService;
+  
+  async startIncompleteRecoverySequence(
+    assessmentId: string,
+    questionsCompleted: number,
+    totalQuestions: number
+  ): Promise<void> {
+    const assessment = await prisma.assessment.findUnique({
+      where: { id: assessmentId },
+      include: { emailTracking: true }
+    });
+
+    if (!assessment || !assessment.email || assessment.completedAt) return;
+
+    // Reference timing from email-templates.md specification
+    const recoverySchedule = this.getRecoveryScheduleFromSpec(questionsCompleted, totalQuestions);
+    
+    // Schedule recovery emails based on completion progress
+    for (const timing of recoverySchedule) {
+      await this.scheduleService.schedule({
+        type: 'incomplete_recovery',
+        assessmentId: assessment.id,
+        executeAt: new Date(Date.now() + timing.delayMs),
+        data: {
+          questionsCompleted,
+          totalQuestions,
+          resumeUrl: `/assessment/resume?session=${assessment.sessionId}`,
+          urgencyLevel: timing.urgencyLevel,
+          enableTimingOptimization: timing.optimizeTiming
+        }
+      });
+    }
+
+    // Track recovery sequence initiation
+    await prisma.emailSequence.create({
+      data: {
+        assessmentId,
+        type: 'incomplete_recovery',
+        progress: questionsCompleted / totalQuestions,
+        scheduledEmails: recoverySchedule.length,
+        status: 'active'
+      }
+    });
+  }
+
+  private getRecoveryScheduleFromSpec(
+    completed: number,
+    total: number
+  ): RecoveryScheduleTiming[] {
+    const progress = completed / total;
+    
+    // Reference /workspaces/ai-scorecard/implementation-spec/email-templates.md
+    // for complete timing specifications
+    
+    if (progress < 0.25) {
+      // Early abandonment - aggressive recovery
+      return [
+        { delayMs: 2 * 60 * 60 * 1000, urgencyLevel: 'gentle', optimizeTiming: true }, // 2 hours
+        { delayMs: 24 * 60 * 60 * 1000, urgencyLevel: 'value_focused', optimizeTiming: true }, // 1 day
+        { delayMs: 72 * 60 * 60 * 1000, urgencyLevel: 'urgent', optimizeTiming: false } // 3 days
+      ];
+    } else if (progress < 0.75) {
+      // Mid-progress abandonment - moderate recovery
+      return [
+        { delayMs: 4 * 60 * 60 * 1000, urgencyLevel: 'gentle', optimizeTiming: true }, // 4 hours
+        { delayMs: 48 * 60 * 60 * 1000, urgencyLevel: 'value_focused', optimizeTiming: true } // 2 days
+      ];
+    } else {
+      // Near completion - single gentle nudge
+      return [
+        { delayMs: 6 * 60 * 60 * 1000, urgencyLevel: 'gentle', optimizeTiming: true } // 6 hours
+      ];
+    }
+  }
+}
+```
+
+**Delivery Tracking Integration:**
+```typescript
+// lib/services/email-tracking.ts
+export class EmailTrackingService {
+  async trackEmailDelivery(messageId: string, event: EmailEvent): Promise<void> {
+    await prisma.emailTracking.upsert({
+      where: { messageId },
+      update: {
+        status: event.type,
+        deliveredAt: event.type === 'delivered' ? new Date() : undefined,
+        openedAt: event.type === 'opened' ? new Date() : undefined,
+        clickedAt: event.type === 'clicked' ? new Date() : undefined,
+        bouncedAt: event.type === 'bounced' ? new Date() : undefined,
+        metadata: event.data
+      },
+      create: {
+        messageId,
+        assessmentId: event.assessmentId,
+        emailType: event.emailType,
+        abTestVariant: event.abTestVariant,
+        status: event.type,
+        sentAt: new Date(),
+        deliveredAt: event.type === 'delivered' ? new Date() : undefined,
+        metadata: event.data
+      }
+    });
+
+    // Update A/B test performance metrics
+    if (event.type === 'opened' || event.type === 'clicked') {
+      await this.updateABTestMetrics(messageId, event);
+    }
+  }
+
+  private async updateABTestMetrics(messageId: string, event: EmailEvent): Promise<void> {
+    const tracking = await prisma.emailTracking.findUnique({
+      where: { messageId }
+    });
+
+    if (!tracking) return;
+
+    await prisma.abTestMetrics.upsert({
+      where: {
+        emailType_variant: {
+          emailType: tracking.emailType,
+          variant: tracking.abTestVariant
+        }
+      },
+      update: {
+        totalSent: { increment: 0 },
+        totalOpened: event.type === 'opened' ? { increment: 1 } : undefined,
+        totalClicked: event.type === 'clicked' ? { increment: 1 } : undefined,
+        lastUpdated: new Date()
+      },
+      create: {
+        emailType: tracking.emailType,
+        variant: tracking.abTestVariant,
+        totalSent: 1,
+        totalOpened: event.type === 'opened' ? 1 : 0,
+        totalClicked: event.type === 'clicked' ? 1 : 0,
+        lastUpdated: new Date()
+      }
+    });
+  }
+}
+```
+
+**TDD IMPLEMENTATION APPROACH:**
+
+**RED Phase - Write Failing Tests:**
+```typescript
+// tests/services/incomplete-recovery.test.ts
+describe('Incomplete Recovery Email Service', () => {
+  test('should send recovery email with correct variant based on progress', async () => {
+    const mockData = {
+      assessmentId: 'test-123',
+      email: 'test@company.com',
+      firstName: 'John',
+      questionsCompleted: 8,
+      totalQuestions: 16,
+      resumeUrl: 'https://test.com/resume',
+      unsubscribeUrl: 'https://test.com/unsubscribe'
+    };
+    
+    const result = await emailService.sendIncompleteRecoveryEmail(
+      mockData.email,
+      mockData
+    );
+    
+    expect(result.success).toBe(true);
+    expect(result.messageId).toBeDefined();
+    
+    // Verify A/B test tracking
+    const abTestRecord = await prisma.abTestMetrics.findFirst({
+      where: { emailType: 'incomplete_recovery' }
+    });
+    expect(abTestRecord).toBeDefined();
+  });
+
+  test('should schedule email for optimal timing when confidence is high', async () => {
+    mockTimingOptimizer.getOptimalSendTime.mockResolvedValue({
+      recommendedTime: new Date(Date.now() + 3600000), // 1 hour from now
+      confidence: 0.8,
+      reason: 'historical_engagement'
+    });
+    
+    const result = await emailService.sendIncompleteRecoveryEmail(
+      'test@company.com',
+      mockRecoveryData
+    );
+    
+    expect(result.scheduled).toBe(true);
+    expect(mockScheduleService.schedule).toHaveBeenCalled();
+  });
+
+  test('should create recovery sequence based on email-templates.md spec', async () => {
+    const emailSequence = new EmailSequenceAutomation();
+    
+    await emailSequence.startIncompleteRecoverySequence('test-123', 4, 16);
+    
+    const scheduledEmails = await prisma.scheduledEmail.findMany({
+      where: { assessmentId: 'test-123', type: 'incomplete_recovery' }
+    });
+    
+    // Early abandonment should have 3 scheduled emails
+    expect(scheduledEmails).toHaveLength(3);
+    expect(scheduledEmails[0].urgencyLevel).toBe('gentle');
+    expect(scheduledEmails[1].urgencyLevel).toBe('value_focused');
+    expect(scheduledEmails[2].urgencyLevel).toBe('urgent');
+  });
+});
+```
+
+**KEY FILES TO CREATE:**
+- /emails/assessment-results.tsx - Main results email template
+- /emails/incomplete-recovery.tsx - Recovery email for incomplete assessments
+- /emails/deep-insights.tsx - Advanced insights email
+- /lib/services/email.ts - Enhanced email service with A/B testing
+- /lib/services/email-tracking.ts - Delivery tracking and metrics
+- /lib/services/send-timing-optimizer.ts - Optimal send time calculation
+- /lib/automation/email-sequences.ts - Complete automation including recovery
+- /app/api/email/send/route.ts - Email sending API endpoint
+- /app/api/email/webhook/route.ts - Email delivery webhooks
+- /lib/ab-testing/email-variants.ts - A/B testing logic
+- /tests/services/email.test.ts - Email service tests
+- /tests/services/incomplete-recovery.test.ts - Recovery email tests
+- /tests/emails/ - All email template tests
+- /tests/automation/email-sequences.test.ts - Sequence automation tests
+
+# Test Strategy:
+Comprehensive TDD approach with specification-driven testing: 1) RED phase tests referencing /workspaces/ai-scorecard/implementation-spec/email-templates.md for all email types and timing, 2) Unit tests for A/B testing variants and subject line generation (80%+ coverage), 3) Integration tests for Resend/SendGrid failover and delivery tracking, 4) Tests for incomplete recovery sequences based on progress levels, 5) Send timing optimization validation tests, 6) GREEN phase minimal implementation, 7) REFACTOR phase with production-ready templates and advanced analytics, 8) End-to-end tests for complete email automation workflows including recovery sequences.

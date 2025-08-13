@@ -1,0 +1,422 @@
+# Task ID: 8
+# Title: Assessment Steps 3 & 4 UI - Risk Management & Governance
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Build the final two assessment steps covering Model Risk & Compliance (25% weight) and Implementation Governance (15% weight). Implement completion flow with comprehensive data capture, final validation, and seamless transition to results with mobile-first TDD methodology targeting 40%+ executive mobile users.
+# Details:
+**MOBILE-FIRST STEPS 3 & 4 UI IMPLEMENTATION:**
+
+**Mobile-First Requirements (40%+ Executive Mobile Users):**
+- Reference /workspaces/ai-scorecard/implementation-spec/user-experience-flow.md for mobile breakpoints and touch optimization
+- 44px minimum touch targets for all interactive elements
+- Responsive typography scaling and mobile-optimized layouts
+- Touch gesture support and mobile-specific user interactions
+- Offline-capable data persistence and progressive enhancement
+
+**Step 3: Model Risk & Compliance (25% weight):**
+- 4 questions covering data privacy compliance, AI bias testing, audit trail & explainability, and regulatory preparedness
+- Compliance-focused progressive capture (phone number, executive role)
+- Enhanced validation with regulatory compliance indicators
+- GDPR/CCPA compliance warnings for certain response patterns
+- Mobile-optimized compliance warning banners with touch-friendly interactions
+
+**Step 4: Implementation Governance (15% weight):**
+- 4 questions covering AI implementation processes, change management, team structure, and governance oversight
+- Final contact information completion with mobile-optimized forms
+- Assessment completion preparation and validation
+- Executive briefing qualification assessment
+- Seamless results transition integration
+
+**Mobile-First Component Architecture:**
+```typescript
+// components/assessment/FinalStepsContainer.tsx
+interface FinalStepsContainerProps {
+  stepNumber: 3 | 4;
+}
+
+export function FinalStepsContainer({ stepNumber }: FinalStepsContainerProps) {
+  const { state, dispatch } = useAssessment();
+  const [qualificationLevel, setQualificationLevel] = useState<QualificationLevel>('basic');
+  const [showComplianceWarning, setShowComplianceWarning] = useState(false);
+  const [isReadyForCompletion, setIsReadyForCompletion] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Mobile detection and responsive optimization
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Monitor compliance risks in Step 3
+  useEffect(() => {
+    if (stepNumber === 3) {
+      const complianceResponses = getRiskComplianceResponses(state.responses);
+      const hasComplianceRisks = complianceResponses.some(response => ['D', 'E'].includes(response));
+      setShowComplianceWarning(hasComplianceRisks);
+    }
+  }, [stepNumber, state.responses]);
+
+  // Assess qualification level as user progresses
+  useEffect(() => {
+    const level = assessExecutiveBriefingQualification(state);
+    setQualificationLevel(level);
+  }, [state]);
+
+  // Check completion readiness in Step 4
+  useEffect(() => {
+    if (stepNumber === 4) {
+      const isReady = validateCompletionReadiness(state);
+      setIsReadyForCompletion(isReady);
+    }
+  }, [stepNumber, state]);
+
+  const handleComplete = async () => {
+    // Completion flow with results transition integration
+    await completeAssessment(state);
+    // Navigate to results with transition animation
+    router.push('/results', { scroll: false });
+  };
+
+  return (
+    <div className={cn(
+      `assessment-step-${stepNumber}`,
+      "min-h-screen flex flex-col",
+      isMobile && "px-4 py-6" // Mobile padding optimization
+    )}>
+      <StepHeader 
+        title={stepNumber === 3 ? 'Model Risk & Compliance' : 'Implementation Governance'}
+        description={stepNumber === 3 
+          ? 'Reviews regulation readiness and model validation'
+          : 'Evaluates AI implementation processes and controls'
+        }
+        weight={stepNumber === 3 ? '25%' : '15%'}
+        isLastStep={stepNumber === 4}
+        isMobile={isMobile}
+      />
+
+      {stepNumber === 3 && showComplianceWarning && (
+        <ComplianceWarningBanner isMobile={isMobile} />
+      )}
+
+      {stepNumber === 3 ? (
+        <RiskComplianceQuestions
+          responses={state.responses}
+          onResponseChange={handleResponseChange}
+          isMobile={isMobile}
+        />
+      ) : (
+        <GovernanceQuestions
+          responses={state.responses}
+          onResponseChange={handleResponseChange}
+          isMobile={isMobile}
+        />
+      )}
+
+      <FinalProgressiveCapture
+        stepNumber={stepNumber}
+        currentData={state.contactInfo}
+        qualificationLevel={qualificationLevel}
+        onDataCapture={handleDataCapture}
+        isMobile={isMobile}
+      />
+
+      {stepNumber === 4 && (
+        <CompletionReadinessIndicator
+          isReady={isReadyForCompletion}
+          qualificationLevel={qualificationLevel}
+          onComplete={handleComplete}
+          isMobile={isMobile}
+        />
+      )}
+
+      <StepNavigation 
+        canProceed={canProceedToNext}
+        isLastStep={stepNumber === 4}
+        completionReady={isReadyForCompletion}
+        onNext={stepNumber === 4 ? handleComplete : handleNext}
+        onPrevious={handlePrevious}
+        isMobile={isMobile}
+      />
+    </div>
+  );
+}
+```
+
+**Mobile-Optimized Compliance Warning System:**
+```typescript
+// components/assessment/ComplianceWarningBanner.tsx
+interface ComplianceWarningBannerProps {
+  isMobile: boolean;
+}
+
+export function ComplianceWarningBanner({ isMobile }: ComplianceWarningBannerProps) {
+  const [showDetails, setShowDetails] = useState(false);
+
+  return (
+    <div className={cn(
+      "compliance-warning bg-orange-50 border border-orange-200 rounded-lg mb-6",
+      isMobile ? "p-4" : "p-6"
+    )}>
+      <div className="flex items-start gap-3">
+        <div className={cn(
+          "text-orange-600",
+          isMobile ? "text-xl" : "text-2xl"
+        )}>⚖️</div>
+        <div className="flex-1">
+          <h4 className={cn(
+            "font-semibold text-orange-900 mb-2",
+            isMobile ? "text-base" : "text-lg"
+          )}>
+            Regulatory Compliance Concerns Detected
+          </h4>
+          <p className={cn(
+            "text-orange-800 mb-3",
+            isMobile ? "text-sm" : "text-base"
+          )}>
+            Your responses indicate potential gaps in regulatory compliance (GDPR, CCPA, AI Act). 
+            This could expose your organization to significant legal and financial risks.
+          </p>
+          
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button 
+              onClick={() => setShowDetails(!showDetails)}
+              className={cn(
+                "text-orange-700 underline hover:no-underline text-left",
+                isMobile ? "text-sm min-h-[44px] flex items-center" : "text-sm"
+              )}
+            >
+              {showDetails ? 'Hide' : 'View'} compliance requirements
+            </button>
+            <span className="text-sm text-orange-600 hidden sm:inline">•</span>
+            <button className={cn(
+              "text-orange-700 underline hover:no-underline text-left",
+              isMobile ? "text-sm min-h-[44px] flex items-center" : "text-sm"
+            )}>
+              Schedule compliance audit
+            </button>
+          </div>
+
+          {showDetails && (
+            <div className={cn(
+              "mt-4 p-3 bg-orange-100 rounded text-orange-800",
+              isMobile ? "text-sm" : "text-base"
+            )}>
+              <h5 className="font-medium mb-2">Key Compliance Areas to Address:</h5>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Data privacy by design implementation</li>
+                <li>AI bias testing and mitigation processes</li>
+                <li>Explainable AI and audit trail requirements</li>
+                <li>Right to explanation compliance</li>
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+**Mobile-Optimized Completion Flow with Results Transition:**
+```typescript
+// components/assessment/CompletionReadinessIndicator.tsx
+interface CompletionReadinessIndicatorProps {
+  isReady: boolean;
+  qualificationLevel: QualificationLevel;
+  onComplete: () => void;
+  isMobile: boolean;
+}
+
+export function CompletionReadinessIndicator({ 
+  isReady, 
+  qualificationLevel, 
+  onComplete,
+  isMobile
+}: CompletionReadinessIndicatorProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleComplete = async () => {
+    setIsSubmitting(true);
+    try {
+      // Prepare results data and create transition
+      await prepareResultsTransition();
+      await onComplete();
+    } catch (error) {
+      console.error('Completion failed:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="completion-readiness border-t border-gray-200 pt-6 mt-8">
+      <div className={cn(
+        "flex items-center justify-between rounded-lg bg-gray-50",
+        isMobile ? "flex-col gap-4 p-4" : "flex-row p-4"
+      )}>
+        <div className={cn(
+          "flex items-center gap-3",
+          isMobile && "text-center flex-col"
+        )}>
+          <div className={cn(
+            "rounded-full",
+            isMobile ? "w-4 h-4" : "w-3 h-3",
+            isReady ? "bg-green-500" : "bg-yellow-500"
+          )} />
+          <div>
+            <p className={cn(
+              "font-medium text-gray-900",
+              isMobile ? "text-base" : "text-sm"
+            )}>
+              {isReady ? 'Ready to Complete Assessment' : 'Complete All Questions to Continue'}
+            </p>
+            <p className={cn(
+              "text-gray-600",
+              isMobile ? "text-sm" : "text-xs"
+            )}>
+              {isReady 
+                ? `Your ${qualificationLevel.replace('_', ' ')} results are ready`
+                : 'Answer all required questions to see your results'
+              }
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={handleComplete}
+          disabled={!isReady || isSubmitting}
+          className={cn(
+            "font-medium transition-colors rounded-md",
+            isMobile ? "w-full py-3 px-6 text-base min-h-[44px]" : "px-6 py-2 text-sm",
+            isReady
+              ? "bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+          )}
+        >
+          {isSubmitting ? 'Processing...' : 'Complete Assessment'}
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+**Results Transition Integration:**
+```typescript
+// lib/completion/results-transition.ts
+export async function prepareResultsTransition() {
+  // Pre-load results page components
+  const { ScoreVisualization } = await import('../components/results/ScoreVisualization');
+  const { RecommendationEngine } = await import('../components/results/RecommendationEngine');
+  
+  // Cache results data for immediate display
+  await cacheResultsData();
+  
+  // Prepare transition animations
+  prepareTransitionAnimations();
+}
+
+export function completeAssessment(state: AssessmentState) {
+  // Calculate final scores
+  const scores = calculateFinalScores(state.responses);
+  
+  // Generate personalized recommendations
+  const recommendations = generateRecommendations(scores, state.contactInfo);
+  
+  // Store completion data
+  storeCompletionData({
+    scores,
+    recommendations,
+    contactInfo: state.contactInfo,
+    qualificationLevel: assessExecutiveBriefingQualification(state),
+    completedAt: new Date().toISOString()
+  });
+  
+  // Trigger results page transition
+  return triggerResultsTransition();
+}
+```
+
+**MOBILE-FIRST TDD IMPLEMENTATION APPROACH:**
+
+**RED Phase - Mobile Touch Optimization Tests:**
+```typescript
+// tests/components/assessment/FinalStepsContainer.mobile.test.tsx
+describe('Final Steps Container - Mobile', () => {
+  test('should render touch-optimized buttons with 44px minimum height', () => {
+    render(
+      <AssessmentProvider initialState={mockMobileState}>
+        <FinalStepsContainer stepNumber={4} />
+      </AssessmentProvider>
+    );
+
+    const touchTargets = screen.getAllByRole('button');
+    touchTargets.forEach(button => {
+      expect(button).toHaveStyle({ minHeight: '44px' });
+    });
+  });
+
+  test('should optimize layout for mobile viewport per user-experience-flow.md', () => {
+    Object.defineProperty(window, 'innerWidth', { value: 375 });
+    
+    render(
+      <AssessmentProvider>
+        <FinalStepsContainer stepNumber={3} />
+      </AssessmentProvider>
+    );
+
+    expect(screen.getByTestId('step-container')).toHaveClass('px-4', 'py-6');
+  });
+
+  test('should handle results transition smoothly on mobile', async () => {
+    const mockRouter = { push: jest.fn() };
+    jest.spyOn(require('next/router'), 'useRouter').mockReturnValue(mockRouter);
+
+    render(
+      <AssessmentProvider initialState={completeAssessmentState}>
+        <FinalStepsContainer stepNumber={4} />
+      </AssessmentProvider>
+    );
+
+    const completeButton = screen.getByRole('button', { name: /complete assessment/i });
+    await userEvent.click(completeButton);
+
+    expect(mockRouter.push).toHaveBeenCalledWith('/results', { scroll: false });
+  });
+});
+```
+
+**KEY MOBILE-FIRST FILES TO CREATE:**
+- /components/assessment/FinalStepsContainer.tsx - Mobile-optimized Steps 3 & 4 container
+- /components/assessment/ComplianceWarningBanner.tsx - Touch-friendly compliance warnings
+- /components/assessment/FinalProgressiveCapture.tsx - Mobile-optimized final data capture
+- /components/assessment/CompletionReadinessIndicator.tsx - Mobile completion status
+- /lib/completion/results-transition.ts - Seamless results page transition
+- /lib/mobile/touch-optimization.ts - Mobile touch interaction utilities
+- /tests/components/assessment/final-steps-mobile/ - Mobile-specific test suites
+- /tests/lib/completion/results-transition.test.ts - Results transition tests
+
+# Test Strategy:
+**MOBILE-FIRST TDD APPROACH (40%+ Executive Mobile Users):**
+
+**RED Phase - Mobile Touch Optimization Tests:**
+- Test 44px minimum touch targets per /workspaces/ai-scorecard/implementation-spec/user-experience-flow.md specifications
+- Validate responsive breakpoints and mobile layout rendering
+- Test touch gesture interactions and mobile-specific user flows
+- Verify offline data persistence and progressive enhancement
+- Test results transition flow integration and smooth page transitions
+
+**GREEN Phase - Mobile-First Implementation:**
+- Implement touch-optimized UI components with proper hit areas
+- Build responsive layouts prioritizing mobile executive users
+- Create mobile-specific progressive capture patterns
+- Implement seamless results page transition with pre-loading
+
+**REFACTOR Phase - Executive Mobile Optimization:**
+- Advanced mobile gesture support and touch interactions
+- Sophisticated mobile performance optimization
+- Executive-focused mobile UX refinements
+- Advanced results transition animations and state management

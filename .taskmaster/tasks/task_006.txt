@@ -1,0 +1,445 @@
+# Task ID: 6
+# Title: Assessment Step 1 UI - AI Value Assurance
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Build the first assessment step focusing on AI Value Assurance questions with progressive data capture, auto-save functionality, and mobile-first responsive design. Implement TDD approach for React components with proper form validation and user experience optimizations, specifically targeting 40%+ executive mobile users.
+# Details:
+**STEP 1 UI IMPLEMENTATION:**
+
+**Assessment Step 1 Focus - AI Value Assurance (25% weight):**
+- 4 questions covering ROI tracking, budget management, success metrics, and value realization
+- Progressive email capture option (not required)
+- Auto-save responses to session storage
+- Mobile-first design prioritizing 40%+ executive mobile users
+- Clear progress indication and navigation
+
+**MOBILE-FIRST IMPLEMENTATION REQUIREMENTS:**
+- Reference /workspaces/ai-scorecard/implementation-spec/user-experience-flow.md for:
+  - Progressive capture implementation details
+  - Email validation patterns and error handling
+  - Mobile breakpoint specifications and touch optimization
+- Touch-optimized interface with minimum 44px touch targets for executive users
+- Mobile-first CSS with specific breakpoints for mobile (320px-768px), tablet (768px-1024px), desktop (1024px+)
+- Executive-appropriate typography scaling and spacing for mobile readability
+- Performance-optimized loading for mobile devices
+
+**React Component Architecture:**
+```typescript
+// app/assessment/step/[step]/page.tsx
+interface AssessmentStepProps {
+  params: { step: string };
+}
+
+export default function AssessmentStep({ params }: AssessmentStepProps) {
+  const stepNumber = parseInt(params.step);
+  const stepConfig = ASSESSMENT_STEPS[stepNumber - 1];
+  
+  return (
+    <AssessmentLayout currentStep={stepNumber}>
+      <StepContainer stepConfig={stepConfig} />
+    </AssessmentLayout>
+  );
+}
+
+// components/assessment/StepContainer.tsx
+interface StepContainerProps {
+  stepConfig: AssessmentStepConfig;
+}
+
+export function StepContainer({ stepConfig }: StepContainerProps) {
+  const { state, dispatch } = useAssessment();
+  const [isLoading, setIsLoading] = useState(false);
+  
+  return (
+    <div className="assessment-step mobile-optimized">
+      <ProgressIndicator current={stepConfig.stepNumber} total={4} />
+      <StepHeader title={stepConfig.title} description={stepConfig.description} />
+      <QuestionForm 
+        questions={stepConfig.questions}
+        responses={state.responses}
+        onResponseChange={handleResponseChange}
+        onEmailCapture={handleEmailCapture}
+      />
+      <StepNavigation 
+        canProceed={canProceedToNext}
+        onNext={handleNext}
+        onPrevious={handlePrevious}
+      />
+    </div>
+  );
+}
+```
+
+**Mobile-First Question Component Implementation:**
+```typescript
+// components/assessment/Question.tsx
+interface QuestionProps {
+  question: AssessmentQuestion;
+  value?: string;
+  onChange: (questionId: string, value: string) => void;
+  autoFocus?: boolean;
+}
+
+export function Question({ question, value, onChange, autoFocus }: QuestionProps) {
+  const [selectedOption, setSelectedOption] = useState<string | undefined>(value);
+  
+  const handleOptionSelect = (optionKey: string) => {
+    setSelectedOption(optionKey);
+    onChange(question.id, optionKey);
+  };
+
+  return (
+    <div className="question-container mb-6 md:mb-8 mobile-first">
+      <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-3 md:mb-4 leading-tight">
+        {question.title}
+      </h3>
+      <p className="text-base md:text-lg text-gray-700 mb-4 md:mb-6 leading-relaxed">
+        {question.question}
+      </p>
+      
+      <div className="options-grid space-y-2 md:space-y-3">
+        {Object.entries(question.options).map(([key, option]) => (
+          <OptionButton
+            key={key}
+            optionKey={key}
+            option={option}
+            isSelected={selectedOption === key}
+            onSelect={() => handleOptionSelect(key)}
+            autoFocus={autoFocus && key === 'A'}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// components/assessment/OptionButton.tsx - Mobile-First Touch Optimization
+interface OptionButtonProps {
+  optionKey: string;
+  option: { text: string; points: number };
+  isSelected: boolean;
+  onSelect: () => void;
+  autoFocus?: boolean;
+}
+
+export function OptionButton({ optionKey, option, isSelected, onSelect, autoFocus }: OptionButtonProps) {
+  return (
+    <button
+      className={cn(
+        "option-button w-full p-3 md:p-4 text-left rounded-lg border-2 transition-all duration-200",
+        "min-h-[44px] touch-manipulation", // Mobile touch optimization
+        "text-sm md:text-base leading-relaxed", // Mobile-first typography
+        isSelected 
+          ? "border-blue-500 bg-blue-50 text-blue-900" 
+          : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 active:bg-gray-100"
+      )}
+      onClick={onSelect}
+      autoFocus={autoFocus}
+    >
+      <div className="flex items-start gap-2 md:gap-3">
+        <span className="option-key font-bold text-base md:text-lg text-blue-600 mt-0.5 md:mt-1 flex-shrink-0">
+          {optionKey})
+        </span>
+        <span className="option-text text-gray-800 leading-relaxed flex-1">
+          {option.text}
+        </span>
+      </div>
+    </button>
+  );
+}
+```
+
+**Progressive Email Capture (per user-experience-flow.md):**
+```typescript
+// components/assessment/EmailCapture.tsx
+interface EmailCaptureProps {
+  currentEmail?: string;
+  onEmailSubmit: (email: string) => void;
+  showIncentive?: boolean;
+}
+
+export function EmailCapture({ currentEmail, onEmailSubmit, showIncentive }: EmailCaptureProps) {
+  const [email, setEmail] = useState(currentEmail || '');
+  const [isVisible, setIsVisible] = useState(!currentEmail);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  // Email validation per user-experience-flow.md specifications
+  const validateEmail = (email: string): string | null => {
+    if (!email) return null;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return "Please enter a valid business email address";
+    }
+    return null;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const error = validateEmail(email);
+    
+    if (error) {
+      setValidationError(error);
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setValidationError(null);
+    
+    try {
+      await onEmailSubmit(email);
+      setIsVisible(false);
+    } catch (error) {
+      console.error('Email submission failed:', error);
+      setValidationError('Failed to save email. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!isVisible) return null;
+
+  return (
+    <div className="email-capture bg-gradient-to-r from-blue-50 to-indigo-50 p-4 md:p-6 rounded-lg border border-blue-200 mb-4 md:mb-6">
+      <div className="flex items-start gap-3 md:gap-4">
+        <div className="text-blue-600 text-xl md:text-2xl flex-shrink-0">📧</div>
+        <div className="flex-1 min-w-0">
+          <h4 className="font-semibold text-gray-900 mb-2 text-sm md:text-base">
+            Get your personalized results via email
+          </h4>
+          <p className="text-gray-600 text-xs md:text-sm mb-3 md:mb-4 leading-relaxed">
+            {showIncentive 
+              ? "Enter your email to receive detailed recommendations and action items."
+              : "Optional: Receive your complete results and improvement recommendations."
+            }
+          </p>
+          
+          <form onSubmit={handleSubmit} className="space-y-2">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (validationError) setValidationError(null);
+                }}
+                placeholder="your.email@company.com"
+                className={cn(
+                  "flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500",
+                  "min-h-[44px] text-base", // Mobile touch optimization
+                  validationError ? "border-red-300" : "border-gray-300"
+                )}
+                disabled={isSubmitting}
+              />
+              <button
+                type="submit"
+                disabled={!email || isSubmitting}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 min-h-[44px] whitespace-nowrap"
+              >
+                {isSubmitting ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+            {validationError && (
+              <p className="text-red-600 text-xs md:text-sm">{validationError}</p>
+            )}
+          </form>
+        </div>
+        
+        <button
+          onClick={() => setIsVisible(false)}
+          className="text-gray-400 hover:text-gray-600 text-lg md:text-xl min-h-[44px] min-w-[44px] flex items-center justify-center"
+        >
+          ×
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+**Mobile-First Auto-Save Implementation:**
+```typescript
+// hooks/useAutoSave.ts
+export function useAutoSave(
+  sessionId: string,
+  currentStep: number,
+  responses: Record<string, string>,
+  email?: string
+) {
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  
+  // Handle offline/online for mobile users
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+  
+  const saveProgress = useCallback(async () => {
+    if (!sessionId || !isOnline) return;
+    
+    setIsSaving(true);
+    try {
+      await fetch('/api/assessment/save-progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          step: currentStep,
+          responses,
+          email,
+          timeSpent: Math.floor((Date.now() - startTime) / 1000),
+          userAgent: navigator.userAgent // For mobile analytics
+        })
+      });
+      
+      setLastSaved(new Date());
+    } catch (error) {
+      console.error('Auto-save failed:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [sessionId, currentStep, responses, email, isOnline]);
+
+  // Auto-save on response changes (debounced for mobile performance)
+  useEffect(() => {
+    const timer = setTimeout(saveProgress, 3000); // Longer delay for mobile
+    return () => clearTimeout(timer);
+  }, [responses, email]);
+
+  // Save on page unload/visibility change (mobile focus handling)
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      saveProgress();
+    };
+    
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        saveProgress();
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [saveProgress]);
+
+  return { isSaving, lastSaved, isOnline };
+}
+```
+
+**MOBILE-FIRST TDD IMPLEMENTATION APPROACH:**
+
+**RED Phase - Mobile-First Failing Tests:**
+```typescript
+// tests/components/assessment/Question.mobile.test.tsx
+describe('Question Component - Mobile First', () => {
+  test('should render with mobile-optimized touch targets (min 44px)', () => {
+    const mockQuestion = createMockQuestion('value_assurance_1');
+    
+    render(
+      <Question 
+        question={mockQuestion}
+        onChange={jest.fn()}
+      />
+    );
+    
+    const optionButtons = screen.getAllByRole('button');
+    optionButtons.forEach(button => {
+      expect(button).toHaveStyle('min-height: 44px');
+    });
+  });
+
+  test('should use mobile-first responsive typography', () => {
+    const mockQuestion = createMockQuestion('value_assurance_1');
+    
+    render(
+      <Question 
+        question={mockQuestion}
+        onChange={jest.fn()}
+      />
+    );
+    
+    const questionTitle = screen.getByRole('heading', { level: 3 });
+    expect(questionTitle).toHaveClass('text-lg', 'md:text-xl');
+  });
+
+  test('should handle touch events properly on mobile', async () => {
+    const mockQuestion = createMockQuestion('value_assurance_1');
+    const mockOnChange = jest.fn();
+    
+    render(
+      <Question 
+        question={mockQuestion}
+        onChange={mockOnChange}
+      />
+    );
+    
+    const optionButton = screen.getByRole('button', { name: /option A/i });
+    
+    // Simulate touch interaction
+    fireEvent.touchStart(optionButton);
+    fireEvent.touchEnd(optionButton);
+    
+    expect(mockOnChange).toHaveBeenCalledWith('value_assurance_1', 'A');
+  });
+});
+
+// tests/components/assessment/EmailCapture.mobile.test.tsx
+describe('EmailCapture Component - Mobile Validation', () => {
+  test('should validate email per user-experience-flow.md specs', async () => {
+    const mockOnSubmit = jest.fn();
+    
+    render(<EmailCapture onEmailSubmit={mockOnSubmit} />);
+    
+    await user.type(screen.getByPlaceholderText(/email/i), 'invalid-email');
+    await user.click(screen.getByRole('button', { name: /save/i }));
+    
+    expect(screen.getByText(/valid business email/i)).toBeInTheDocument();
+    expect(mockOnSubmit).not.toHaveBeenCalled();
+  });
+
+  test('should have mobile-optimized input height (44px)', () => {
+    render(<EmailCapture onEmailSubmit={jest.fn()} />);
+    
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    expect(emailInput).toHaveClass('min-h-[44px]');
+  });
+});
+```
+
+**MOBILE-SPECIFIC REQUIREMENTS:**
+- Implement viewport meta tag optimization for mobile scaling
+- Use CSS Grid/Flexbox for responsive layouts per mobile breakpoints
+- Implement touch-friendly hover states and active states
+- Optimize images and assets for mobile loading performance
+- Include mobile-specific error handling and offline support
+- Follow executive mobile UX patterns (larger text, simplified interactions)
+
+**KEY FILES TO CREATE (Mobile-First Focus):**
+- /app/assessment/step/[step]/page.tsx - Mobile-optimized dynamic step routing
+- /components/assessment/StepContainer.tsx - Mobile-first step layout wrapper
+- /components/assessment/Question.tsx - Touch-optimized question component
+- /components/assessment/OptionButton.tsx - Mobile-first option selection
+- /components/assessment/EmailCapture.tsx - Mobile-validated email capture
+- /components/assessment/ProgressIndicator.tsx - Mobile progress bar
+- /components/assessment/StepNavigation.tsx - Touch-friendly navigation
+- /hooks/useAutoSave.ts - Mobile-optimized auto-save with offline support
+- /tests/components/assessment/ - Mobile-first component tests
+- /styles/assessment-mobile.css - Mobile-first assessment styles
+
+# Test Strategy:
+Mobile-first TDD approach with executive user focus: 1) RED phase - Write failing tests for mobile touch optimization (44px targets), responsive typography, and email validation per user-experience-flow.md specs, 2) Test mobile-specific user interactions and offline scenarios, 3) GREEN phase - Implement minimal mobile-first components with basic functionality, 4) REFACTOR phase - Enhance with executive-friendly UX patterns, performance optimization for mobile, and accessibility compliance, 5) Cross-device testing on actual mobile devices used by executives

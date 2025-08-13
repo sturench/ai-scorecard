@@ -1,0 +1,279 @@
+# Task ID: 5
+# Title: Assessment Content & Scoring Engine
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Implement the complete 16-question assessment content with weighted scoring algorithm that evaluates AI readiness across 4 critical areas. Build the scoring engine that converts responses to actionable insights with proper categorization and recommendation generation.
+# Details:
+**ASSESSMENT CONTENT IMPLEMENTATION:**
+
+**Reference Implementation Specification:**
+- Primary source: /workspaces/ai-scorecard/implementation-spec/assessment-content.md
+- Contains ALL 16 questions with complete text, options, and point values
+- Includes definitive scoring weights and category thresholds
+- Specifies personalized recommendation engine requirements
+
+**Assessment Structure Definition:**
+- 16 total questions across 4 critical areas
+- 4 questions per area with 5-option multiple choice (A-E)
+- Point scale: 25, 15, 10, 5, 0 points per question
+- **Confirmed Area Weights:** AI Value Assurance (25%), Customer-Safe AI (35%), Model Risk & Compliance (25%), Implementation Governance (15%)
+
+**Question Data Structure:**
+```typescript
+// types/assessment.ts
+interface AssessmentQuestion {
+  id: string;                    // e.g., "value_assurance_1"
+  area: AssessmentArea;          // "value_assurance" | "customer_safe" | "risk_compliance" | "governance"
+  title: string;                 // Question title
+  question: string;              // Full question text
+  options: {
+    A: { text: string; points: number };
+    B: { text: string; points: number };
+    C: { text: string; points: number };
+    D: { text: string; points: number };
+    E: { text: string; points: number };
+  };
+  weight: number;                // Area weight percentage
+}
+
+interface AssessmentArea {
+  id: string;
+  title: string;
+  description: string;
+  weight: number;
+  questionCount: number;
+}
+```
+
+**Complete Question Set Implementation:**
+```typescript
+// data/assessment-questions.ts
+// IMPORTANT: Source all 16 questions from /workspaces/ai-scorecard/implementation-spec/assessment-content.md
+// DO NOT hardcode questions - import from specification file
+
+export const ASSESSMENT_AREAS: AssessmentArea[] = [
+  {
+    id: 'value_assurance',
+    title: 'AI Value Assurance',
+    description: 'Evaluates spend controls, KPIs, and ROI measurement',
+    weight: 0.25,
+    questionCount: 4
+  },
+  {
+    id: 'customer_safe',
+    title: 'Customer-Safe AI',
+    description: 'Assesses reliability for customer-facing AI systems',
+    weight: 0.35,
+    questionCount: 4
+  },
+  {
+    id: 'risk_compliance',
+    title: 'Model Risk & Compliance',
+    description: 'Reviews regulation readiness and model validation',
+    weight: 0.25,
+    questionCount: 4
+  },
+  {
+    id: 'governance',
+    title: 'Implementation Governance',
+    description: 'Evaluates AI implementation processes and controls',
+    weight: 0.15,
+    questionCount: 4
+  }
+];
+
+// Load questions from specification file
+export const ASSESSMENT_QUESTIONS: AssessmentQuestion[] = loadQuestionsFromSpec(
+  '/workspaces/ai-scorecard/implementation-spec/assessment-content.md'
+);
+```
+
+**Scoring Algorithm Implementation:**
+```typescript
+// lib/scoring/assessment-scoring.ts
+export interface ScoringResult {
+  totalScore: number;           // 0-100 overall score
+  scoreBreakdown: {
+    valueAssurance: number;     // 0-100 for this area
+    customerSafe: number;       // 0-100 for this area
+    riskCompliance: number;     // 0-100 for this area
+    governance: number;         // 0-100 for this area
+  };
+  scoreCategory: ScoreCategory;
+  recommendations: string[];
+  areaInsights: AreaInsight[];
+  personalizedRecommendations: PersonalizedRecommendation[];
+}
+
+export function calculateAssessmentScore(
+  responses: Record<string, string>,
+  userProfile?: UserProfile
+): ScoringResult {
+  const areaScores = calculateAreaScores(responses);
+  const totalScore = calculateWeightedTotal(areaScores);
+  const scoreCategory = determineScoreCategory(totalScore, areaScores);
+  const recommendations = generateRecommendations(scoreCategory, areaScores);
+  const areaInsights = generateAreaInsights(areaScores);
+  const personalizedRecommendations = generatePersonalizedRecommendations(
+    scoreCategory, 
+    areaScores, 
+    userProfile
+  );
+
+  return {
+    totalScore,
+    scoreBreakdown: areaScores,
+    scoreCategory,
+    recommendations,
+    areaInsights,
+    personalizedRecommendations
+  };
+}
+
+function calculateWeightedTotal(areaScores: ScoreBreakdown): number {
+  return Math.round(
+    (areaScores.valueAssurance * 0.25) +
+    (areaScores.customerSafe * 0.35) +
+    (areaScores.riskCompliance * 0.25) +
+    (areaScores.governance * 0.15)
+  );
+}
+```
+
+**Score Categorization Logic (from specification):**
+```typescript
+// lib/scoring/score-categories.ts
+export type ScoreCategory = 'champion' | 'builder' | 'risk_zone' | 'alert' | 'crisis';
+
+export function determineScoreCategory(
+  totalScore: number, 
+  areaScores: ScoreBreakdown
+): ScoreCategory {
+  // Load thresholds from /workspaces/ai-scorecard/implementation-spec/assessment-content.md
+  const thresholds = loadScoringThresholds();
+  
+  // Crisis: Customer-Safe AI below critical threshold (immediate risk)
+  if (areaScores.customerSafe < thresholds.crisis.customerSafe) {
+    return 'crisis';
+  }
+  
+  // Champion: High total score with no weak areas
+  if (totalScore >= thresholds.champion.total && 
+      Object.values(areaScores).every(score => score >= thresholds.champion.minArea)) {
+    return 'champion';
+  }
+  
+  // Additional logic from specification file...
+  return determineFromThresholds(totalScore, areaScores, thresholds);
+}
+```
+
+**Personalized Recommendation Engine:**
+```typescript
+// lib/scoring/personalized-recommendations.ts
+export interface PersonalizedRecommendation {
+  priority: 'immediate' | 'high' | 'medium' | 'low';
+  category: string;
+  title: string;
+  description: string;
+  timeframe: string;
+  resources: string[];
+  roleSpecific: boolean;
+}
+
+export function generatePersonalizedRecommendations(
+  category: ScoreCategory,
+  areaScores: ScoreBreakdown,
+  userProfile?: UserProfile
+): PersonalizedRecommendation[] {
+  const recommendations: PersonalizedRecommendation[] = [];
+  
+  // Role-specific recommendations
+  if (userProfile?.role) {
+    recommendations.push(...getRoleSpecificRecommendations(userProfile.role, areaScores));
+  }
+  
+  // Industry-specific recommendations
+  if (userProfile?.industry) {
+    recommendations.push(...getIndustrySpecificRecommendations(userProfile.industry, areaScores));
+  }
+  
+  // Company size-specific recommendations
+  if (userProfile?.companySize) {
+    recommendations.push(...getCompanySizeRecommendations(userProfile.companySize, areaScores));
+  }
+  
+  return prioritizeRecommendations(recommendations, category, areaScores);
+}
+```
+
+**TDD IMPLEMENTATION APPROACH:**
+
+**RED Phase - Write Failing Tests:**
+```typescript
+// tests/scoring/assessment-scoring.test.ts
+describe('Assessment Scoring Engine', () => {
+  test('should apply exact weights from specification', () => {
+    const responses = createMixedScoreResponses();
+    const result = calculateAssessmentScore(responses);
+    
+    // Verify weighted calculation: (VA*0.25 + CS*0.35 + RC*0.25 + IG*0.15)
+    const expectedTotal = 
+      (result.scoreBreakdown.valueAssurance * 0.25) +
+      (result.scoreBreakdown.customerSafe * 0.35) +
+      (result.scoreBreakdown.riskCompliance * 0.25) +
+      (result.scoreBreakdown.governance * 0.15);
+    
+    expect(result.totalScore).toBe(Math.round(expectedTotal));
+  });
+
+  test('should load questions from specification file', () => {
+    expect(ASSESSMENT_QUESTIONS).toHaveLength(16);
+    expect(ASSESSMENT_QUESTIONS.filter(q => q.area === 'customer_safe')).toHaveLength(4);
+    
+    // Verify questions match specification format
+    ASSESSMENT_QUESTIONS.forEach(question => {
+      expect(question).toHaveProperty('id');
+      expect(question).toHaveProperty('options.A.points');
+      expect(question.options.A.points).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  test('should generate personalized recommendations', () => {
+    const responses = createTestResponses();
+    const userProfile = { role: 'CTO', industry: 'fintech', companySize: 'enterprise' };
+    
+    const result = calculateAssessmentScore(responses, userProfile);
+    
+    expect(result.personalizedRecommendations).toBeDefined();
+    expect(result.personalizedRecommendations.length).toBeGreaterThan(0);
+    expect(result.personalizedRecommendations.some(r => r.roleSpecific)).toBe(true);
+  });
+});
+```
+
+**GREEN Phase - Specification-Driven Implementation:**
+- Load all content from /workspaces/ai-scorecard/implementation-spec/assessment-content.md
+- Implement exact scoring weights and thresholds from specification
+- Build basic personalized recommendation engine
+- Core weighted average calculation with specified weights
+
+**REFACTOR Phase - Production Ready:**
+- Advanced personalized recommendation algorithms
+- Performance optimization for real-time scoring
+- Comprehensive edge case handling
+- Enhanced user profiling and recommendation relevance
+
+**KEY FILES TO CREATE:**
+- /lib/content/spec-loader.ts - Load content from implementation specification
+- /data/assessment-questions.ts - Questions loaded from specification file
+- /lib/scoring/assessment-scoring.ts - Core scoring with exact weights (25/35/25/15)
+- /lib/scoring/score-categories.ts - Categorization from specification thresholds
+- /lib/scoring/personalized-recommendations.ts - Role/industry-specific recommendations
+- /types/assessment.ts - TypeScript interfaces for assessment data
+- /tests/scoring/ - Tests validating specification compliance
+- /data/scoring-fixtures.ts - Test data matching specification format
+
+# Test Strategy:
+TDD approach with specification-driven testing: 1) RED phase tests loading content from implementation-spec/assessment-content.md, 2) Validate exact scoring weights (25/35/25/15), 3) Test personalized recommendation generation, 4) Verify category thresholds from specification, 5) GREEN phase implements minimal passing functionality, 6) REFACTOR phase adds production-ready features while maintaining specification compliance.

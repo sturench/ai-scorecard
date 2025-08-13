@@ -1,0 +1,594 @@
+# Task ID: 11
+# Title: Analytics & Performance Tracking
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Implement comprehensive analytics system with privacy-compliant tracking, performance monitoring, conversion funnel analysis, and business intelligence dashboard. Build TDD-driven analytics infrastructure that supports A/B testing and provides actionable insights for optimization.
+# Details:
+**ANALYTICS & PERFORMANCE IMPLEMENTATION:**
+
+**Analytics Architecture:**
+- Privacy-compliant event tracking without PII storage
+- Real-time performance monitoring with alerts
+- Conversion funnel analysis and optimization insights
+- A/B testing results tracking and statistical significance
+- Business intelligence dashboard for stakeholders
+- KPI compliance tracking (>70% completion rate, >15% executive briefing conversion)
+- Real-time metrics and error tracking
+
+**Event Tracking System:**
+```typescript
+// lib/analytics/tracking.ts
+interface AnalyticsEvent {
+  event: string;
+  properties: Record<string, any>;
+  timestamp: Date;
+  sessionId?: string;
+  userId?: string; // Hashed for privacy
+}
+
+export class AnalyticsService {
+  private events: AnalyticsEvent[] = [];
+  private batchSize = 50;
+  private flushInterval = 30000; // 30 seconds
+  
+  constructor() {
+    this.startBatchProcessor();
+  }
+
+  track(event: string, properties: Record<string, any> = {}, sessionId?: string): void {
+    const analyticsEvent: AnalyticsEvent = {
+      event,
+      properties: this.sanitizeProperties(properties),
+      timestamp: new Date(),
+      sessionId,
+      userId: properties.email ? this.hashEmail(properties.email) : undefined
+    };
+
+    this.events.push(analyticsEvent);
+    
+    if (this.events.length >= this.batchSize) {
+      this.flush();
+    }
+  }
+
+  // Core assessment funnel events
+  trackAssessmentStarted(sessionId: string, source?: string): void {
+    this.track('assessment_started', {
+      source: source || 'direct',
+      timestamp: Date.now()
+    }, sessionId);
+  }
+
+  trackStepCompleted(sessionId: string, step: number, timeSpent: number, responses: Record<string, string>): void {
+    this.track('assessment_step_completed', {
+      step,
+      timeSpent,
+      responseCount: Object.keys(responses).length,
+      hasHighRiskResponses: this.detectHighRiskResponses(responses, step)
+    }, sessionId);
+  }
+
+  trackEmailCaptured(sessionId: string, step: number, emailDomain: string): void {
+    this.track('email_captured', {
+      step,
+      emailDomain: emailDomain.toLowerCase(),
+      captureMethod: step === 0 ? 'initial' : 'progressive'
+    }, sessionId);
+  }
+
+  trackAssessmentCompleted(sessionId: string, results: AssessmentResults): void {
+    this.track('assessment_completed', {
+      totalScore: results.totalScore,
+      scoreCategory: results.scoreCategory,
+      completionTime: results.completionTime,
+      qualificationLevel: results.qualificationLevel,
+      areaScores: results.scoreBreakdown
+    }, sessionId);
+  }
+
+  trackExecutiveBriefingRequested(sessionId: string, method: string): void {
+    this.track('executive_briefing_requested', {
+      method, // 'cta_click', 'email_link', 'phone_call'
+      fromScoreCategory: this.getSessionScoreCategory(sessionId)
+    }, sessionId);
+  }
+
+  // Performance tracking
+  trackPerformanceMetric(metric: string, value: number, context?: Record<string, any>): void {
+    this.track('performance_metric', {
+      metric,
+      value,
+      ...context
+    });
+  }
+
+  trackPageLoad(page: string, loadTime: number, sessionId?: string): void {
+    this.track('page_load', {
+      page,
+      loadTime,
+      isSlowLoad: loadTime > 2000,
+      connectionType: this.getConnectionType()
+    }, sessionId);
+  }
+
+  // A/B testing events
+  trackABTestAssignment(testName: string, variant: string, sessionId?: string): void {
+    this.track('ab_test_assignment', {
+      testName,
+      variant
+    }, sessionId);
+  }
+
+  trackABTestConversion(testName: string, variant: string, conversionType: string, sessionId?: string): void {
+    this.track('ab_test_conversion', {
+      testName,
+      variant,
+      conversionType
+    }, sessionId);
+  }
+
+  // Error tracking
+  trackError(error: Error, context?: Record<string, any>, sessionId?: string): void {
+    this.track('error_occurred', {
+      errorName: error.name,
+      errorMessage: error.message,
+      errorStack: error.stack?.substring(0, 1000), // Truncate for storage
+      ...context
+    }, sessionId);
+  }
+
+  private async flush(): Promise<void> {
+    if (this.events.length === 0) return;
+
+    const eventsToSend = this.events.splice(0, this.batchSize);
+    
+    try {
+      await fetch('/api/analytics/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ events: eventsToSend })
+      });
+    } catch (error) {
+      console.error('Analytics flush failed:', error);
+      this.trackError(error, { context: 'analytics_flush_failed' });
+      // Re-queue events for retry
+      this.events.unshift(...eventsToSend);
+    }
+  }
+
+  private sanitizeProperties(properties: Record<string, any>): Record<string, any> {
+    const sanitized = { ...properties };
+    
+    // Remove PII
+    delete sanitized.email;
+    delete sanitized.firstName;
+    delete sanitized.lastName;
+    delete sanitized.phone;
+    
+    // Hash sensitive data
+    if (properties.email) {
+      sanitized.emailHash = this.hashEmail(properties.email);
+      sanitized.emailDomain = properties.email.split('@')[1]?.toLowerCase();
+    }
+    
+    if (properties.company) {
+      sanitized.companyHash = this.hashString(properties.company);
+    }
+
+    return sanitized;
+  }
+
+  private hashEmail(email: string): string {
+    return crypto.createHash('sha256').update(email.toLowerCase()).digest('hex');
+  }
+}
+```
+
+**Real-Time Dashboard Implementation:**
+```typescript
+// components/analytics/Dashboard.tsx
+interface KPIMetrics {
+  completionRate: number; // Target >70%
+  executiveBriefingConversion: number; // Target >15%
+  pageLoadTime: number; // Target <2s
+  errorRate: number; // Target <2%
+  dailyCompletions: number;
+  avgAssessmentTime: number; // Target 8-10 minutes
+  mobileCompletionRate: number; // Target >65%
+}
+
+export const Dashboard: React.FC = () => {
+  const [metrics, setMetrics] = useState<KPIMetrics | null>(null);
+  const [funnel, setFunnel] = useState<FunnelStage[]>([]);
+  const [abTests, setAbTests] = useState<ABTestResult[]>([]);
+  const [isRealTime, setIsRealTime] = useState(true);
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const [metricsRes, funnelRes, abTestsRes] = await Promise.all([
+          fetch('/api/analytics/metrics'),
+          fetch('/api/analytics/funnel'),
+          fetch('/api/analytics/ab-tests')
+        ]);
+
+        setMetrics(await metricsRes.json());
+        setFunnel(await funnelRes.json());
+        setAbTests(await abTestsRes.json());
+      } catch (error) {
+        console.error('Failed to fetch analytics data:', error);
+      }
+    };
+
+    fetchMetrics();
+    
+    // Real-time updates
+    if (isRealTime) {
+      const interval = setInterval(fetchMetrics, 30000); // 30 seconds
+      return () => clearInterval(interval);
+    }
+  }, [isRealTime]);
+
+  return (
+    <div className="dashboard-container">
+      <div className="kpi-grid">
+        <KPICard
+          title="Completion Rate"
+          value={metrics?.completionRate || 0}
+          target={70}
+          format="percentage"
+          trend="up"
+        />
+        <KPICard
+          title="Executive Briefing Conversion"
+          value={metrics?.executiveBriefingConversion || 0}
+          target={15}
+          format="percentage"
+          trend="up"
+        />
+        <KPICard
+          title="Page Load Time"
+          value={metrics?.pageLoadTime || 0}
+          target={2000}
+          format="milliseconds"
+          trend="down"
+        />
+        <KPICard
+          title="Error Rate"
+          value={metrics?.errorRate || 0}
+          target={2}
+          format="percentage"
+          trend="down"
+        />
+      </div>
+      
+      <ConversionFunnelChart data={funnel} />
+      <ABTestResults tests={abTests} />
+      <RealTimeMetrics isEnabled={isRealTime} />
+    </div>
+  );
+};
+```
+
+**Conversion Funnel Analysis:**
+```typescript
+// lib/analytics/funnel.ts
+export interface FunnelStage {
+  name: string;
+  count: number;
+  conversionRate: number;
+  dropoffRate: number;
+  avgTimeToNext?: number;
+  kpiTarget?: number; // Business requirement targets
+}
+
+export class FunnelAnalyzer {
+  async getAssessmentFunnel(dateRange: DateRange): Promise<FunnelStage[]> {
+    const funnelData = await this.getFunnelData(dateRange);
+    
+    const stages: FunnelStage[] = [
+      {
+        name: 'Landing Page Visits',
+        count: funnelData.landingPageViews,
+        conversionRate: 100,
+        dropoffRate: 0,
+        kpiTarget: 60 // >60% should start assessment
+      },
+      {
+        name: 'Assessment Started',
+        count: funnelData.assessmentStarted,
+        conversionRate: (funnelData.assessmentStarted / funnelData.landingPageViews) * 100,
+        dropoffRate: ((funnelData.landingPageViews - funnelData.assessmentStarted) / funnelData.landingPageViews) * 100,
+        avgTimeToNext: funnelData.avgTimeToStep1,
+        kpiTarget: 70 // >70% completion rate
+      },
+      {
+        name: 'Step 1 Completed',
+        count: funnelData.step1Completed,
+        conversionRate: (funnelData.step1Completed / funnelData.assessmentStarted) * 100,
+        dropoffRate: ((funnelData.assessmentStarted - funnelData.step1Completed) / funnelData.assessmentStarted) * 100,
+        avgTimeToNext: funnelData.avgTimeStep1To2
+      },
+      {
+        name: 'Step 2 Completed',
+        count: funnelData.step2Completed,
+        conversionRate: (funnelData.step2Completed / funnelData.step1Completed) * 100,
+        dropoffRate: ((funnelData.step1Completed - funnelData.step2Completed) / funnelData.step1Completed) * 100,
+        avgTimeToNext: funnelData.avgTimeStep2To3
+      },
+      {
+        name: 'Assessment Completed',
+        count: funnelData.assessmentCompleted,
+        conversionRate: (funnelData.assessmentCompleted / funnelData.step2Completed) * 100,
+        dropoffRate: ((funnelData.step2Completed - funnelData.assessmentCompleted) / funnelData.step2Completed) * 100,
+        avgTimeToNext: funnelData.avgTimeToResults
+      },
+      {
+        name: 'Email Captured',
+        count: funnelData.emailCaptured,
+        conversionRate: (funnelData.emailCaptured / funnelData.assessmentCompleted) * 100,
+        dropoffRate: ((funnelData.assessmentCompleted - funnelData.emailCaptured) / funnelData.assessmentCompleted) * 100,
+        kpiTarget: 50 // >50% email capture rate
+      },
+      {
+        name: 'Executive Briefing Requested',
+        count: funnelData.briefingRequested,
+        conversionRate: (funnelData.briefingRequested / funnelData.emailCaptured) * 100,
+        dropoffRate: ((funnelData.emailCaptured - funnelData.briefingRequested) / funnelData.emailCaptured) * 100,
+        kpiTarget: 15 // >15% executive briefing conversion
+      }
+    ];
+
+    return stages;
+  }
+
+  async getKPICompliance(dateRange: DateRange): Promise<KPIStatus[]> {
+    const funnel = await this.getAssessmentFunnel(dateRange);
+    const performance = await this.getPerformanceMetrics(dateRange);
+    
+    return [
+      {
+        metric: 'Assessment Completion Rate',
+        current: funnel.find(s => s.name === 'Assessment Started')?.conversionRate || 0,
+        target: 70,
+        status: (funnel.find(s => s.name === 'Assessment Started')?.conversionRate || 0) >= 70 ? 'good' : 'warning'
+      },
+      {
+        metric: 'Executive Briefing Conversion',
+        current: funnel.find(s => s.name === 'Executive Briefing Requested')?.conversionRate || 0,
+        target: 15,
+        status: (funnel.find(s => s.name === 'Executive Briefing Requested')?.conversionRate || 0) >= 15 ? 'good' : 'critical'
+      },
+      {
+        metric: 'Page Load Time',
+        current: performance.avgPageLoadTime,
+        target: 2000,
+        status: performance.avgPageLoadTime <= 2000 ? 'good' : 'warning'
+      },
+      {
+        metric: 'Mobile Completion Rate',
+        current: performance.mobileCompletionRate,
+        target: 65,
+        status: performance.mobileCompletionRate >= 65 ? 'good' : 'warning'
+      }
+    ];
+  }
+}
+```
+
+**A/B Testing Results Tracking:**
+```typescript
+// lib/analytics/ab-testing.ts
+export class ABTestTracker {
+  async getTestResults(testName: string): Promise<ABTestResult> {
+    const variants = await this.getTestVariants(testName);
+    const results: ABTestResult = {
+      testName,
+      startDate: variants[0].startDate,
+      status: this.getTestStatus(variants),
+      variants: variants.map(variant => ({
+        name: variant.name,
+        participants: variant.participants,
+        conversions: variant.conversions,
+        conversionRate: (variant.conversions / variant.participants) * 100,
+        confidence: this.calculateConfidence(variant, variants[0]),
+        isWinner: variant.isWinner || false
+      }))
+    };
+
+    // Statistical significance calculation
+    results.hasStatisticalSignificance = results.variants.some(v => v.confidence >= 95);
+    
+    return results;
+  }
+
+  async trackTestConversion(testName: string, variant: string, sessionId: string, conversionType: string): Promise<void> {
+    // Track the conversion event
+    await this.analytics.trackABTestConversion(testName, variant, conversionType, sessionId);
+    
+    // Update test statistics in real-time
+    await this.updateTestStatistics(testName, variant, conversionType);
+  }
+
+  private calculateConfidence(variant: TestVariant, control: TestVariant): number {
+    // Z-test for conversion rate comparison
+    const p1 = variant.conversions / variant.participants;
+    const p2 = control.conversions / control.participants;
+    const pooledP = (variant.conversions + control.conversions) / (variant.participants + control.participants);
+    
+    const se = Math.sqrt(pooledP * (1 - pooledP) * (1/variant.participants + 1/control.participants));
+    const z = Math.abs(p1 - p2) / se;
+    
+    // Convert z-score to confidence level
+    return this.zScoreToConfidence(z);
+  }
+}
+```
+
+**TDD IMPLEMENTATION APPROACH:**
+
+**RED Phase - Write Failing Tests:**
+```typescript
+// tests/analytics/dashboard.test.ts
+describe('Analytics Dashboard', () => {
+  test('should display KPI compliance status with business requirements', async () => {
+    const mockMetrics: KPIMetrics = {
+      completionRate: 75, // Above 70% target
+      executiveBriefingConversion: 12, // Below 15% target  
+      pageLoadTime: 1800, // Below 2s target
+      errorRate: 1.5, // Below 2% target
+      dailyCompletions: 50,
+      avgAssessmentTime: 540000, // 9 minutes
+      mobileCompletionRate: 68 // Above 65% target
+    };
+    
+    render(<Dashboard />);
+    
+    expect(screen.getByText('Completion Rate')).toBeInTheDocument();
+    expect(screen.getByText('75%')).toBeInTheDocument();
+    expect(screen.getByText('Executive Briefing Conversion')).toBeInTheDocument();
+    expect(screen.getByText('12%')).toBeInTheDocument();
+    
+    // Should show warning for executive briefing conversion below target
+    expect(screen.getByTestId('executive-briefing-status')).toHaveClass('status-warning');
+  });
+
+  test('should update metrics in real-time every 30 seconds', async () => {
+    jest.useFakeTimers();
+    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue(new Response('{}'));
+    
+    render(<Dashboard />);
+    
+    // Initial fetch
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
+    
+    // Advance timer by 30 seconds
+    act(() => {
+      jest.advanceTimersByTime(30000);
+    });
+    
+    // Should fetch again
+    expect(fetchSpy).toHaveBeenCalledTimes(6);
+    
+    jest.useRealTimers();
+  });
+});
+
+// tests/analytics/kpi-compliance.test.ts
+describe('KPI Compliance Tracking', () => {
+  test('should track completion rate against 70% business requirement', async () => {
+    const analyzer = new FunnelAnalyzer();
+    const mockFunnelData = {
+      landingPageViews: 1000,
+      assessmentStarted: 600, // 60% start rate
+      assessmentCompleted: 450 // 75% of starters complete (meets >70% requirement)
+    };
+    
+    jest.spyOn(analyzer, 'getFunnelData').mockResolvedValue(mockFunnelData);
+    
+    const kpiStatus = await analyzer.getKPICompliance({ start: new Date(), end: new Date() });
+    const completionKPI = kpiStatus.find(kpi => kpi.metric === 'Assessment Completion Rate');
+    
+    expect(completionKPI?.current).toBe(75);
+    expect(completionKPI?.target).toBe(70);
+    expect(completionKPI?.status).toBe('good');
+  });
+
+  test('should track executive briefing conversion against 15% business requirement', async () => {
+    const analyzer = new FunnelAnalyzer();
+    const mockData = {
+      emailCaptured: 300,
+      briefingRequested: 42 // 14% conversion (below 15% requirement)
+    };
+    
+    jest.spyOn(analyzer, 'getFunnelData').mockResolvedValue(mockData);
+    
+    const kpiStatus = await analyzer.getKPICompliance({ start: new Date(), end: new Date() });
+    const briefingKPI = kpiStatus.find(kpi => kpi.metric === 'Executive Briefing Conversion');
+    
+    expect(briefingKPI?.current).toBe(14);
+    expect(briefingKPI?.target).toBe(15);
+    expect(briefingKPI?.status).toBe('critical');
+  });
+});
+```
+
+**GREEN Phase - Minimal Implementation:**
+- Basic real-time metrics collection
+- Simple funnel dashboard
+- A/B test result display
+- KPI compliance indicators
+
+**REFACTOR Phase - Production Ready:**
+- Advanced real-time updates with WebSocket
+- Interactive funnel visualization with drill-down
+- Sophisticated A/B test analysis with confidence intervals
+- Comprehensive error tracking and alerting
+
+**KEY FILES TO CREATE:**
+- /lib/analytics/tracking.ts - Core analytics service with KPI tracking
+- /lib/analytics/performance.ts - Performance monitoring with business targets
+- /lib/analytics/funnel.ts - Conversion funnel analysis with KPI compliance
+- /lib/analytics/ab-testing.ts - A/B test results tracking
+- /app/api/analytics/metrics/route.ts - KPI metrics API
+- /app/api/analytics/dashboard/route.ts - Real-time dashboard data API
+- /components/analytics/Dashboard.tsx - Real-time analytics dashboard
+- /components/analytics/KPICard.tsx - KPI compliance indicators
+- /components/analytics/FunnelChart.tsx - Conversion funnel visualization
+- /components/analytics/ABTestResults.tsx - A/B test results display
+- /hooks/useAnalytics.ts - React analytics hook with error tracking
+- /tests/analytics/ - Comprehensive analytics test files with KPI validation
+
+# Test Strategy:
+TDD implementation with business KPI validation: 1) RED phase tests for KPI compliance tracking (>70% completion, >15% executive briefing conversion, <2s page load), 2) Real-time metrics collection and error tracking tests, 3) Conversion funnel analysis with business requirement validation, 4) A/B test statistical significance testing, 5) GREEN phase minimal dashboard implementation, 6) REFACTOR phase advanced real-time features with comprehensive error handling and alerting
+
+# Subtasks:
+## 1. Core Analytics Service Implementation [pending]
+### Dependencies: None
+### Description: Build the foundational AnalyticsService class with privacy-compliant event tracking, batching, and real-time error tracking capabilities
+### Details:
+
+
+## 2. KPI Compliance Tracking System [pending]
+### Dependencies: 11.1
+### Description: Implement KPI tracking system that monitors business requirements: >70% completion rate, >15% executive briefing conversion, <2s page load times, and >65% mobile completion rate
+### Details:
+
+
+## 3. Conversion Funnel Analysis Engine [pending]
+### Dependencies: 11.1
+### Description: Build comprehensive funnel analysis system that tracks user progression through assessment steps with dropoff identification and KPI validation against business targets
+### Details:
+
+
+## 4. Real-Time Analytics Dashboard [pending]
+### Dependencies: 11.2, 11.3
+### Description: Create interactive dashboard component with live KPI monitoring, funnel visualization, and real-time metrics updates every 30 seconds
+### Details:
+
+
+## 5. A/B Testing Results Tracking [pending]
+### Dependencies: 11.1
+### Description: Implement A/B test tracking system with statistical significance calculations, confidence intervals, and conversion rate comparisons for optimization insights
+### Details:
+
+
+## 6. Performance Monitoring & Error Tracking [pending]
+### Dependencies: 11.1
+### Description: Build comprehensive performance monitoring system that tracks Core Web Vitals, API response times, assessment step duration, and real-time error tracking with alerting
+### Details:
+
+
+## 7. Analytics API Endpoints [pending]
+### Dependencies: 11.2, 11.3, 11.5, 11.6
+### Description: Create REST API endpoints for analytics data retrieval including /api/analytics/metrics, /api/analytics/funnel, /api/analytics/events, and /api/analytics/ab-tests
+### Details:
+
+
+## 8. Comprehensive Analytics Testing Suite [pending]
+### Dependencies: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6, 11.7
+### Description: Implement TDD test suite covering KPI validation, funnel analysis accuracy, A/B test statistical calculations, and real-time dashboard functionality
+### Details:
+
+

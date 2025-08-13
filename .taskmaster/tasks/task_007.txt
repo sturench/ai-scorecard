@@ -1,0 +1,541 @@
+# Task ID: 7
+# Title: Assessment Step 2 UI - Customer-Safe AI
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Build the second assessment step focusing on Customer-Safe AI questions (35% weight - highest priority area). Implement enhanced progressive data capture, advanced auto-save with conflict resolution, and executive-friendly UX patterns with TDD methodology.
+# Details:
+**STEP 2 UI IMPLEMENTATION:**
+
+**Assessment Step 2 Focus - Customer-Safe AI (35% weight - HIGHEST PRIORITY):**
+- 4 critical questions covering accuracy monitoring, failure handling, customer impact measurement, and response reliability
+- Enhanced progressive data capture (company name, role)
+- Advanced auto-save with conflict resolution for concurrent sessions
+- Executive-optimized UX with clear risk indicators
+- Highest weight area requires extra attention to user experience
+
+**MOBILE-FIRST IMPLEMENTATION REQUIREMENTS:**
+- Target 40%+ mobile executive users with touch-optimized interface
+- Reference /workspaces/ai-scorecard/implementation-spec/user-experience-flow.md for progressive data capture patterns
+- Implement 44px minimum touch targets per mobile optimization specs
+- Mobile-friendly question cards with simplified navigation
+- Fixed bottom navigation for mobile with simplified CTA buttons
+- Responsive typography and spacing optimizations
+- Touch-optimized radio buttons and form controls
+
+**Enhanced Step Component:**
+```typescript
+// components/assessment/Step2Container.tsx
+export function Step2Container() {
+  const { state, dispatch } = useAssessment();
+  const { isSaving, lastSaved, conflicts } = useAdvancedAutoSave(state.sessionId, 2, state.responses);
+  const [showRiskWarning, setShowRiskWarning] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Detect mobile viewport
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
+  // Monitor for high-risk responses in Customer-Safe area
+  useEffect(() => {
+    const customerSafeResponses = Object.entries(state.responses)
+      .filter(([key]) => key.startsWith('customer_safe_'))
+      .map(([, value]) => value);
+    
+    // Show warning if any D or E responses (high risk)
+    const hasHighRisk = customerSafeResponses.some(response => ['D', 'E'].includes(response));
+    setShowRiskWarning(hasHighRisk);
+  }, [state.responses]);
+
+  if (isMobile) {
+    return (
+      <div className="mobile-step">
+        {/* Mobile-optimized progress bar */}
+        <div className="bg-white px-4 py-3 border-b">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-500">Step 2 of 4</span>
+            <span className="text-blue-600 font-semibold">50%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-1 mt-2">
+            <div className="bg-blue-600 h-1 rounded-full transition-all duration-300" style={{width: '50%'}}></div>
+          </div>
+        </div>
+        
+        {/* Mobile question layout */}
+        <div className="p-4 space-y-6 pb-20">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">
+              Customer-Safe AI
+            </h2>
+            <p className="text-sm text-gray-600">
+              Assessing reliability for customer-facing AI systems
+            </p>
+          </div>
+          
+          {showRiskWarning && (
+            <MobileRiskWarningBanner 
+              message="Your responses indicate potential customer safety risks. Consider scheduling an immediate AI safety review."
+            />
+          )}
+          
+          <MobileProgressiveCapture
+            currentData={{ email: state.email, company: state.company }}
+            onDataCapture={handleDataCapture}
+            stepNumber={2}
+          />
+          
+          <MobileCustomerSafeQuestions
+            responses={state.responses}
+            onResponseChange={handleResponseChange}
+          />
+        </div>
+        
+        {/* Fixed bottom navigation */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t px-4 py-3">
+          <button 
+            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold disabled:bg-gray-300 min-h-[44px]"
+            disabled={!canProceedToNext}
+            onClick={handleNext}
+          >
+            Next Step
+          </button>
+          {(isSaving || lastSaved) && (
+            <p className="text-xs text-gray-500 text-center mt-2">
+              {isSaving ? 'Saving...' : `Last saved: ${formatTime(lastSaved)}`}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="assessment-step-2">
+      <StepHeader 
+        title="Customer-Safe AI"
+        description="Assessing reliability for customer-facing AI systems"
+        weight="35%"
+        priority="highest"
+      />
+      
+      {showRiskWarning && (
+        <RiskWarningBanner 
+          message="Your responses indicate potential customer safety risks. Consider scheduling an immediate AI safety review."
+        />
+      )}
+      
+      <CustomerSafeQuestions
+        responses={state.responses}
+        onResponseChange={handleResponseChange}
+      />
+      
+      <EnhancedProgressiveCapture
+        currentData={{ email: state.email, company: state.company }}
+        onDataCapture={handleDataCapture}
+        stepNumber={2}
+      />
+      
+      <StepNavigation 
+        canProceed={canProceedToNext}
+        onNext={handleNext}
+        saveStatus={{ isSaving, lastSaved, conflicts }}
+      />
+    </div>
+  );
+}
+```
+
+**Mobile-Optimized Question Component:**
+```typescript
+// components/assessment/MobileCustomerSafeQuestions.tsx
+export function MobileCustomerSafeQuestions({ responses, onResponseChange }) {
+  return (
+    <div className="space-y-4">
+      {customerSafeQuestions.map(question => (
+        <div key={question.id} className="mobile-question bg-white rounded-lg border p-4">
+          <h3 className="font-medium text-gray-900 mb-3 text-sm leading-relaxed">
+            {question.text}
+          </h3>
+          
+          <div className="space-y-2">
+            {question.options.map(option => (
+              <label 
+                key={option.value}
+                className="flex items-start gap-3 p-3 -mx-1 rounded-lg active:bg-gray-100 cursor-pointer min-h-[44px]"
+              >
+                <input 
+                  type="radio" 
+                  name={question.id}
+                  value={option.value}
+                  checked={responses[question.id] === option.value}
+                  onChange={() => onResponseChange(question.id, option.value)}
+                  className="mt-1 text-blue-600 min-w-[16px] min-h-[16px]"
+                />
+                <span className="text-sm text-gray-700 leading-relaxed flex-1">
+                  {option.text}
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+**Mobile Progressive Data Capture:**
+```typescript
+// components/assessment/MobileProgressiveCapture.tsx
+export function MobileProgressiveCapture({ currentData, onDataCapture, stepNumber }) {
+  const [activeCapture, setActiveCapture] = useState(null);
+  
+  // Determine what to capture based on step and existing data
+  const getNextCapture = () => {
+    if (!currentData.email) return 'email';
+    if (stepNumber >= 2 && !currentData.company) return 'company';
+    return null;
+  };
+
+  useEffect(() => {
+    const nextCapture = getNextCapture();
+    if (nextCapture && !activeCapture) {
+      setActiveCapture(nextCapture);
+    }
+  }, [stepNumber, currentData]);
+
+  if (!activeCapture) {
+    return (
+      <div className="text-center py-2">
+        <button 
+          className="text-sm text-blue-600 underline min-h-[44px] px-4"
+          onClick={() => setActiveCapture('company')}
+        >
+          Add company details for personalized recommendations
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-blue-50 p-3 rounded-lg text-sm">
+      {activeCapture === 'email' && (
+        <div>
+          <p className="text-blue-800 font-medium mb-2">
+            Get results emailed (optional)
+          </p>
+          <input 
+            type="email" 
+            placeholder="your.email@company.com"
+            className="w-full px-3 py-2 text-sm border border-blue-200 rounded min-h-[44px]"
+            onChange={(e) => handleEmailChange(e.target.value)}
+          />
+        </div>
+      )}
+      
+      {activeCapture === 'company' && (
+        <div>
+          <p className="text-blue-800 font-medium mb-2">
+            Company name for industry insights
+          </p>
+          <input 
+            type="text" 
+            placeholder="Your company name"
+            className="w-full px-3 py-2 text-sm border border-blue-200 rounded min-h-[44px]"
+            onChange={(e) => handleCompanyChange(e.target.value)}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+**SESSION MANAGEMENT & AUTO-SAVE INTEGRATION:**
+
+**Advanced Auto-Save with Mobile Optimization:**
+```typescript
+// hooks/useAdvancedAutoSave.ts
+export function useAdvancedAutoSave(
+  sessionId: string,
+  currentStep: number,
+  responses: Record<string, string>,
+  email?: string
+) {
+  const [saveState, setSaveState] = useState({
+    isSaving: false,
+    lastSaved: null,
+    conflicts: [],
+    retryCount: 0,
+    isOffline: false
+  });
+
+  // Detect online/offline status for mobile users
+  useEffect(() => {
+    const handleOnline = () => setSaveState(prev => ({ ...prev, isOffline: false }));
+    const handleOffline = () => setSaveState(prev => ({ ...prev, isOffline: true }));
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  const saveProgress = useCallback(async () => {
+    if (!sessionId || saveState.isSaving || saveState.isOffline) {
+      // Store locally if offline
+      if (saveState.isOffline) {
+        localStorage.setItem('assessment-offline-data', JSON.stringify({
+          step: currentStep,
+          responses,
+          email,
+          timestamp: Date.now()
+        }));
+      }
+      return;
+    }
+    
+    setSaveState(prev => ({ ...prev, isSaving: true }));
+    
+    try {
+      const response = await fetch('/api/assessment/save-progress', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'If-Match': saveState.lastSaved?.toISOString()
+        },
+        body: JSON.stringify({
+          sessionId,
+          step: currentStep,
+          responses,
+          email,
+          userAgent: navigator.userAgent,
+          viewport: { width: window.innerWidth, height: window.innerHeight },
+          timeSpent: Math.floor((Date.now() - stepStartTime) / 1000),
+          clientTimestamp: new Date().toISOString()
+        })
+      });
+
+      if (response.status === 409) {
+        const conflictData = await response.json();
+        setSaveState(prev => ({
+          ...prev,
+          conflicts: [conflictData.conflict],
+          isSaving: false
+        }));
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(`Save failed: ${response.status}`);
+      }
+
+      // Clear offline data on successful save
+      localStorage.removeItem('assessment-offline-data');
+      
+      setSaveState(prev => ({
+        ...prev,
+        lastSaved: new Date(),
+        conflicts: [],
+        retryCount: 0,
+        isSaving: false
+      }));
+
+    } catch (error) {
+      console.error('Auto-save failed:', error);
+      
+      // Store locally as backup
+      localStorage.setItem('assessment-backup', JSON.stringify({
+        step: currentStep,
+        responses,
+        email,
+        timestamp: Date.now()
+      }));
+      
+      // Exponential backoff retry
+      const delay = Math.min(1000 * Math.pow(2, saveState.retryCount), 30000);
+      
+      setTimeout(() => {
+        setSaveState(prev => ({ 
+          ...prev, 
+          retryCount: prev.retryCount + 1,
+          isSaving: false 
+        }));
+        
+        if (saveState.retryCount < 3) {
+          saveProgress();
+        }
+      }, delay);
+    }
+  }, [sessionId, currentStep, responses, email, saveState]);
+
+  // Debounced auto-save optimized for mobile
+  useEffect(() => {
+    const timer = setTimeout(saveProgress, 2000); // Slightly faster for mobile
+    return () => clearTimeout(timer);
+  }, [responses, email]);
+
+  // Sync offline data when coming back online
+  useEffect(() => {
+    if (!saveState.isOffline && saveState.lastSaved === null) {
+      const offlineData = localStorage.getItem('assessment-offline-data');
+      if (offlineData) {
+        saveProgress();
+      }
+    }
+  }, [saveState.isOffline]);
+
+  return saveState;
+}
+```
+
+**TDD IMPLEMENTATION WITH MOBILE-FIRST APPROACH:**
+
+**RED Phase - Mobile-First Failing Tests:**
+```typescript
+// tests/components/assessment/Step2Container.mobile.test.tsx
+describe('Step 2 Container - Mobile Experience', () => {
+  beforeEach(() => {
+    // Mock mobile viewport
+    Object.defineProperty(window, 'innerWidth', { value: 375 });
+    Object.defineProperty(window, 'innerHeight', { value: 667 });
+  });
+
+  test('should render mobile layout below 768px viewport', () => {
+    render(<Step2Container />);
+    
+    expect(screen.getByTestId('mobile-step')).toBeInTheDocument();
+    expect(screen.getByTestId('fixed-bottom-nav')).toBeInTheDocument();
+    expect(screen.queryByTestId('desktop-step-header')).not.toBeInTheDocument();
+  });
+
+  test('should have minimum 44px touch targets', () => {
+    render(<Step2Container />);
+    
+    const touchTargets = screen.getAllByRole('button');
+    touchTargets.forEach(button => {
+      const styles = getComputedStyle(button);
+      const height = parseInt(styles.minHeight);
+      expect(height).toBeGreaterThanOrEqual(44);
+    });
+  });
+
+  test('should show simplified progressive capture on mobile', () => {
+    render(
+      <AssessmentProvider initialState={{ email: 'test@company.com' }}>
+        <Step2Container />
+      </AssessmentProvider>
+    );
+    
+    expect(screen.getByText(/company name for industry insights/i)).toBeInTheDocument();
+  });
+
+  test('should handle offline state gracefully', async () => {
+    const mockNavigator = { onLine: false };
+    Object.defineProperty(window, 'navigator', { value: mockNavigator });
+    
+    render(<Step2Container />);
+    
+    // Simulate answering question while offline
+    const radioButton = screen.getByRole('radio', { name: /option a/i });
+    await user.click(radioButton);
+    
+    // Should store data locally
+    expect(localStorage.getItem('assessment-offline-data')).toBeTruthy();
+  });
+});
+
+// tests/components/assessment/MobileCustomerSafeQuestions.test.tsx
+describe('Mobile Customer Safe Questions', () => {
+  test('should render touch-optimized question cards', () => {
+    render(
+      <MobileCustomerSafeQuestions 
+        responses={{}}
+        onResponseChange={jest.fn()}
+      />
+    );
+    
+    const questionCards = screen.getAllByTestId('mobile-question-card');
+    expect(questionCards).toHaveLength(4); // 4 customer-safe questions
+    
+    questionCards.forEach(card => {
+      expect(card).toHaveClass('rounded-lg');
+      expect(card).toHaveClass('p-4');
+    });
+  });
+
+  test('should have proper spacing for touch interactions', () => {
+    render(
+      <MobileCustomerSafeQuestions 
+        responses={{}}
+        onResponseChange={jest.fn()}
+      />
+    );
+    
+    const radioLabels = screen.getAllByRole('radio');
+    radioLabels.forEach(label => {
+      const parentLabel = label.closest('label');
+      expect(parentLabel).toHaveClass('min-h-[44px]');
+    });
+  });
+});
+```
+
+**GREEN Phase - Minimal Mobile Implementation:**
+- Basic mobile viewport detection
+- Simplified mobile layout with fixed bottom navigation
+- Touch-optimized form controls with minimum 44px targets
+- Basic offline data storage
+
+**REFACTOR Phase - Production Mobile Experience:**
+- Advanced touch gesture support
+- Optimized mobile performance with lazy loading
+- Sophisticated offline sync with conflict resolution
+- Mobile-specific analytics and user behavior tracking
+
+**KEY FILES TO CREATE (MOBILE-FOCUSED):**
+- /components/assessment/Step2Container.tsx - Enhanced with mobile-first responsive design
+- /components/assessment/MobileCustomerSafeQuestions.tsx - Touch-optimized question interface
+- /components/assessment/MobileProgressiveCapture.tsx - Mobile-friendly data capture
+- /components/assessment/MobileRiskWarningBanner.tsx - Mobile risk warning system
+- /hooks/useAdvancedAutoSave.ts - Auto-save with offline support
+- /hooks/useMobileDetection.ts - Mobile viewport and touch detection
+- /tests/components/assessment/mobile/ - Mobile-specific test suite
+- /styles/mobile-assessment.css - Mobile-first responsive styles
+
+# Test Strategy:
+**MOBILE-FIRST TDD APPROACH:**
+
+**RED Phase - Mobile Touch Optimization Tests:**
+- Test 44px minimum touch targets per user-experience-flow.md specs
+- Validate responsive breakpoints and mobile layout rendering
+- Test touch gesture interactions and mobile-specific user flows
+- Verify offline data storage and session recovery on mobile devices
+- Test progressive data capture timing and mobile form validation
+- Validate mobile-optimized auto-save functionality with network interruptions
+
+**Mobile Test Categories:**
+1. **Viewport & Responsive Tests:** Mobile layout detection, breakpoint behavior, touch target sizing
+2. **Touch Interaction Tests:** Radio button selection, form input focus, scroll behavior
+3. **Progressive Capture Tests:** Mobile-friendly email/company capture, simplified form flows
+4. **Offline/Network Tests:** Auto-save during network issues, data recovery, sync on reconnection
+5. **Performance Tests:** Mobile loading speeds, component lazy loading, memory usage
+
+**GREEN Phase - Mobile Implementation:**
+- Implement mobile viewport detection and conditional rendering
+- Create touch-optimized components with proper sizing
+- Build simplified mobile progressive capture flow
+- Implement basic offline data storage
+
+**REFACTOR Phase - Advanced Mobile UX:**
+- Advanced mobile performance optimizations
+- Sophisticated offline sync and conflict resolution
+- Mobile-specific analytics and behavior tracking
+- Advanced touch gestures and mobile accessibility features

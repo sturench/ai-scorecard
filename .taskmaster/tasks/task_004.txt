@@ -1,0 +1,350 @@
+# Task ID: 4
+# Title: HubSpot CRM Integration & API Layer
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Build robust HubSpot CRM integration with contact/deal creation, retry queue management, and complete lead qualification engine. Implement resilient API layer that handles HubSpot Free tier limitations (100 requests per 10 seconds) with proper error handling and exponential backoff retry logic.
+# Details:
+**HUBSPOT INTEGRATION REQUIREMENTS:**
+
+**HubSpot API Integration Setup:**
+- HubSpot API client configuration using @hubspot/api-client
+- Authentication with HubSpot Access Token
+- Rate limiting compliance (100 requests per 10 seconds for Free tier)
+- Error handling for HubSpot API failures
+- Retry queue with exponential backoff for failed syncs
+
+**Complete Lead Qualification Engine (Tier 1-3 System):**
+```typescript
+// lib/services/lead-qualification.ts
+export class LeadQualificationService {
+  static qualifyLead(assessmentData: AssessmentData): LeadQualificationResult {
+    const tier = this.determineTier(assessmentData);
+    const qualifiedForBriefing = this.isExecutiveBriefingQualified(assessmentData);
+    
+    return {
+      tier,
+      qualifiedForBriefing,
+      hubspotSyncRequired: tier >= 1, // All tiers sync to HubSpot
+      dealCreationRequired: qualifiedForBriefing
+    };
+  }
+  
+  private static determineTier(data: AssessmentData): number {
+    // Tier 1 (Basic): Email provided → HubSpot contact creation
+    if (data.email) {
+      // Tier 2 (Enhanced): Name + Company → Enhanced contact record  
+      if (data.firstName && data.company) {
+        // Tier 3 (Executive Briefing Qualified): Complete contact OR qualifying criteria
+        if (this.isExecutiveBriefingQualified(data)) {
+          return 3;
+        }
+        return 2;
+      }
+      return 1;
+    }
+    return 0; // No qualification
+  }
+  
+  private static isExecutiveBriefingQualified(data: AssessmentData): boolean {
+    // Complete contact information
+    const hasCompleteContact = data.firstName && data.lastName && data.company && data.phone;
+    
+    // Score-based qualification (needs help)
+    const needsHelp = data.totalScore < 60; // Risk zone, alert, or crisis categories
+    
+    // High-value company indicators
+    const isHighValueCompany = this.checkCompanyValueIndicators(data);
+    
+    // Industry-specific criteria
+    const qualifiesOnIndustry = this.checkIndustryQualification(data);
+    
+    return hasCompleteContact || needsHelp || isHighValueCompany || qualifiesOnIndustry;
+  }
+  
+  private static checkCompanyValueIndicators(data: AssessmentData): boolean {
+    // Company size indicators (from company name or additional data)
+    const largeCompanyKeywords = ['Corp', 'Corporation', 'Inc', 'LLC', 'Ltd', 'Group', 'Holdings'];
+    const hasLargeCompanyIndicator = largeCompanyKeywords.some(keyword => 
+      data.company?.toLowerCase().includes(keyword.toLowerCase())
+    );
+    
+    // Critical customer safety issues (high-value signal)
+    const hasCriticalCustomerSafetyIssues = data.scoreBreakdown.customerSafe < 50;
+    
+    return hasLargeCompanyIndicator || hasCriticalCustomerSafetyIssues;
+  }
+  
+  private static checkIndustryQualification(data: AssessmentData): boolean {
+    // High-value industries (could be enhanced with industry detection)
+    const highValueIndustries = ['finance', 'banking', 'healthcare', 'technology', 'manufacturing'];
+    
+    // This could be enhanced with more sophisticated industry detection
+    // For now, based on company name patterns or future industry selection
+    return highValueIndustries.some(industry => 
+      data.company?.toLowerCase().includes(industry)
+    );
+  }
+}
+```
+
+**HubSpot Sync Payload Implementation (per api-specification.md):**
+```typescript
+// lib/services/hubspot.ts
+export class HubSpotService {
+  private client: Client;
+  
+  async createOrUpdateContact(assessmentData: AssessmentData): Promise<HubSpotResult> {
+    const qualification = LeadQualificationService.qualifyLead(assessmentData);
+    
+    const hubspotPayload: HubSpotSyncPayload = {
+      email: assessmentData.email,
+      properties: {
+        // Standard contact properties
+        firstname: assessmentData.firstName,
+        lastname: assessmentData.lastName,
+        company: assessmentData.company,
+        phone: assessmentData.phone,
+        
+        // Custom AI assessment properties (max 10 for Free tier)
+        ai_assessment_score: assessmentData.totalScore,
+        ai_assessment_category: assessmentData.scoreCategory,
+        ai_value_score: assessmentData.scoreBreakdown.valueAssurance,
+        ai_customer_score: assessmentData.scoreBreakdown.customerSafe,
+        ai_risk_score: assessmentData.scoreBreakdown.riskCompliance,
+        ai_governance_score: assessmentData.scoreBreakdown.governance,
+        ai_assessment_date: assessmentData.completedAt.toISOString().split('T')[0],
+        ai_completion_time: assessmentData.completionTime,
+        ai_lead_quality: this.getLeadQualityLabel(qualification.tier),
+        lead_source: 'AI Reality Check Scorecard'
+      }
+    };
+    
+    const contactResult = await this.client.crm.contacts.basicApi.create({
+      properties: hubspotPayload.properties,
+      associations: []
+    });
+    
+    // Create deal for Executive Briefing qualified leads
+    if (qualification.qualifiedForBriefing) {
+      await this.createExecutiveBriefingDeal(contactResult.id, assessmentData);
+    }
+    
+    return { success: true, contactId: contactResult.id };
+  }
+  
+  private getLeadQualityLabel(tier: number): string {
+    switch (tier) {
+      case 1: return 'basic';
+      case 2: return 'enhanced';
+      case 3: return 'executive_briefing_qualified';
+      default: return 'unqualified';
+    }
+  }
+  
+  private async createExecutiveBriefingDeal(contactId: string, data: AssessmentData): Promise<void> {
+    const dealPayload: HubSpotDealPayload = {
+      properties: {
+        dealname: `AI Reality Check - ${data.firstName} ${data.lastName} (${data.company})`,
+        dealstage: 'executive_briefing_requested',
+        amount: '5000', // Estimated consulting value
+        pipeline: 'ai_consulting_pipeline',
+        closedate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+        ai_assessment_score: data.totalScore
+      },
+      associations: [{
+        to: { id: contactId },
+        types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 3 }]
+      }]
+    };
+    
+    await this.client.crm.deals.basicApi.create(dealPayload);
+  }
+}
+```
+
+**Executive Briefing Qualification Thresholds:**
+1. **Complete Contact Information:** All fields (firstName, lastName, company, phone) provided
+2. **Score-Based Qualification:** Total score < 60 (Risk Zone, Alert, or Crisis categories)
+3. **Industry/Company Size Criteria:**
+   - Large company indicators (Corp, Inc, LLC patterns)
+   - High-value industries (finance, healthcare, technology, manufacturing)
+   - Critical customer safety scores < 50 (indicates immediate need)
+
+**Retry Queue Implementation:**
+- HubspotSyncQueue table management
+- Exponential backoff retry logic (60s, 300s, 900s, 1800s, 3600s)
+- Maximum retry attempts (5) before marking as permanently failed
+- Background job processing for queued syncs
+- Dead letter queue for permanently failed syncs
+
+**API Endpoints for HubSpot Integration:**
+```typescript
+// app/api/hubspot/contact/route.ts
+export async function POST(request: NextRequest) {
+  const hubspotService = new HubSpotService();
+  const qualificationService = new LeadQualificationService();
+  
+  try {
+    const assessmentData = await request.json();
+    const qualification = qualificationService.qualifyLead(assessmentData);
+    
+    if (qualification.hubspotSyncRequired) {
+      const result = await hubspotService.createOrUpdateContact(assessmentData);
+      return NextResponse.json({ 
+        success: true, 
+        contactId: result.contactId,
+        qualification: qualification
+      });
+    }
+    
+    return NextResponse.json({ 
+      success: true, 
+      skipped: true,
+      reason: 'Insufficient qualification for HubSpot sync'
+    });
+  } catch (error) {
+    // Queue for retry if HubSpot API fails
+    await queueHubSpotSync(assessmentData);
+    throw new APIError('HUBSPOT_SYNC_FAILED', error.message, 500);
+  }
+}
+```
+
+**Rate Limiting & API Compliance:**
+- Request throttling to stay within HubSpot Free tier limits
+- Batch processing capabilities for multiple contacts
+- API response monitoring and error categorization
+- Automatic retry delay calculation based on rate limit headers
+
+**TDD IMPLEMENTATION APPROACH:**
+
+**RED Phase - Write Failing Tests:**
+```typescript
+// tests/services/lead-qualification.test.ts
+describe('Lead Qualification Service', () => {
+  test('should qualify as Tier 1 with email only', () => {
+    const assessment = createMockAssessmentData({ email: 'test@company.com' });
+    const result = LeadQualificationService.qualifyLead(assessment);
+    
+    expect(result.tier).toBe(1);
+    expect(result.hubspotSyncRequired).toBe(true);
+    expect(result.qualifiedForBriefing).toBe(false);
+  });
+  
+  test('should qualify as Tier 3 for executive briefing when score < 60', () => {
+    const lowScoreAssessment = createMockAssessmentData({ 
+      email: 'ceo@company.com',
+      firstName: 'John',
+      totalScore: 45 
+    });
+    
+    const result = LeadQualificationService.qualifyLead(lowScoreAssessment);
+    
+    expect(result.tier).toBe(3);
+    expect(result.qualifiedForBriefing).toBe(true);
+    expect(result.dealCreationRequired).toBe(true);
+  });
+  
+  test('should qualify for executive briefing with complete contact info', () => {
+    const completeContact = createMockAssessmentData({
+      email: 'ceo@company.com',
+      firstName: 'John',
+      lastName: 'Doe',
+      company: 'Acme Corp',
+      phone: '+1-555-123-4567',
+      totalScore: 75
+    });
+    
+    const result = LeadQualificationService.qualifyLead(completeContact);
+    
+    expect(result.qualifiedForBriefing).toBe(true);
+  });
+
+  test('should qualify high-value company with critical customer safety issues', () => {
+    const criticalSafetyAssessment = createMockAssessmentData({
+      email: 'cto@techcorp.com',
+      company: 'TechCorp',
+      scoreBreakdown: { customerSafe: 40 }
+    });
+    
+    const result = LeadQualificationService.qualifyLead(criticalSafetyAssessment);
+    
+    expect(result.qualifiedForBriefing).toBe(true);
+  });
+});
+
+// tests/services/hubspot.test.ts
+describe('HubSpot Integration Service', () => {
+  test('should create contact with proper lead quality classification', async () => {
+    const tierTwoAssessment = createMockAssessmentData({
+      email: 'manager@company.com',
+      firstName: 'Jane',
+      company: 'Company Inc'
+    });
+    
+    const hubspotService = new HubSpotService();
+    const result = await hubspotService.createOrUpdateContact(tierTwoAssessment);
+    
+    expect(result.success).toBe(true);
+    expect(mockHubSpotClient.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        properties: expect.objectContaining({
+          ai_lead_quality: 'enhanced'
+        })
+      })
+    );
+  });
+  
+  test('should create deal for executive briefing qualified leads', async () => {
+    const qualifiedAssessment = createMockAssessmentData({ 
+      totalScore: 45, // Triggers briefing qualification
+      firstName: 'John',
+      lastName: 'Doe',
+      company: 'Acme Corp'
+    });
+    
+    const hubspotService = new HubSpotService();
+    await hubspotService.createOrUpdateContact(qualifiedAssessment);
+    
+    expect(mockHubSpotClient.deals.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        properties: expect.objectContaining({
+          dealname: 'AI Reality Check - John Doe (Acme Corp)',
+          dealstage: 'executive_briefing_requested'
+        })
+      })
+    );
+  });
+});
+```
+
+**GREEN Phase - Minimal Implementation:**
+- Basic HubSpot client setup with authentication
+- Tier-based lead qualification logic
+- Contact creation with proper custom properties
+- Executive briefing deal creation for qualified leads
+- Database queue insertion for failures
+
+**REFACTOR Phase - Production Ready:**
+- Comprehensive error handling and categorization
+- Proper rate limiting and throttling
+- Exponential backoff retry logic
+- Performance optimizations and batch processing
+- Monitoring and alerting integration
+
+**KEY FILES TO CREATE:**
+- /lib/services/hubspot.ts - Core HubSpot integration service
+- /lib/services/lead-qualification.ts - Complete Tier 1-3 qualification engine
+- /lib/services/hubspot-retry.ts - Retry queue processing
+- /lib/errors/hubspot-errors.ts - HubSpot-specific error handling
+- /app/api/hubspot/contact/route.ts - Contact creation API
+- /app/api/hubspot/deal/route.ts - Deal creation API
+- /app/api/hubspot/sync-queue/route.ts - Retry queue management
+- /tests/services/lead-qualification.test.ts - Lead qualification tests
+- /tests/services/hubspot.test.ts - HubSpot service tests
+- /tests/api/hubspot.test.ts - HubSpot API endpoint tests
+- /lib/utils/rate-limiter.ts - Rate limiting utilities
+
+# Test Strategy:
+Comprehensive TDD approach with unit tests for lead qualification engine (80%+ coverage), integration tests for HubSpot API interactions, and end-to-end tests for complete sync workflows. Mock HubSpot API responses for deterministic testing. Test all qualification tiers and executive briefing scenarios.

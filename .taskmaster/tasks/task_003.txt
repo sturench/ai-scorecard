@@ -1,0 +1,285 @@
+# Task ID: 3
+# Title: Database Schema & Prisma ORM Setup
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Implement the complete database schema and Prisma ORM configuration with privacy-focused design, HubSpot integration tracking, and automated data retention compliance. Establish the data foundation that supports all assessment functionality with TDD-compatible testing patterns.
+# Details:
+**DATABASE SCHEMA IMPLEMENTATION:**
+
+**Prisma Schema Definition (prisma/schema.prisma):**
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Assessment {
+  id          String   @id @default(uuid())
+  sessionId   String   @unique
+  
+  // Assessment data
+  responses        Json     // {"value_assurance_1": "A", "customer_safe_1": "B", ...}
+  totalScore       Int?     // 0-100 overall score
+  scoreBreakdown   Json?    // {"valueAssurance": 75, "customerSafe": 80, ...}
+  scoreCategory    String?  // 'champion', 'builder', 'risk_zone', 'alert', 'crisis'
+  recommendations  String[] // Array of recommendation strings
+  
+  // User data (scrubbed after 30 days)
+  email            String?
+  firstName        String?
+  lastName         String?
+  company          String?
+  phone            String?
+  
+  // HubSpot integration tracking
+  hubspotSyncStatus     String  @default("pending") // 'pending', 'synced', 'failed', 'skipped'
+  hubspotSyncAttempts   Int     @default(0)
+  hubspotContactId      String?
+  hubspotDealId         String?
+  hubspotSyncError      String?
+  hubspotSyncedAt       DateTime?
+  
+  // Email delivery tracking
+  emailDeliveryStatus   String  @default("pending") // 'pending', 'sent', 'failed', 'skipped'
+  emailDeliveryAttempts Int     @default(0)
+  emailDeliveredAt      DateTime?
+  emailDeliveryError    String?
+  
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  completedAt     DateTime?
+  emailScrubbedAt DateTime?
+  
+  // Analytics fields (preserved after email scrub)
+  completionTimeSeconds Int?
+  browserInfo          Json?
+  referrerSource       String?
+  abTestVariant        String?
+  ipAddressHash        String?
+  leadQuality          String   @default("basic") // 'basic', 'enhanced', 'executive_briefing_qualified'
+  qualifiedForBriefing Boolean  @default(false)
+  
+  // Relations
+  hubspotSyncQueue HubspotSyncQueue[]
+  
+  @@index([sessionId])
+  @@index([email])
+  @@index([createdAt])
+  @@index([hubspotSyncStatus])
+  @@index([createdAt, totalScore, scoreCategory], name: "analytics_idx")
+  @@map("assessments")
+}
+
+model AssessmentSession {
+  sessionId     String   @id
+  currentStep   Int      @default(0)
+  totalSteps    Int      @default(4)
+  responses     Json     @default("{}")
+  
+  // Progressive data capture
+  email         String?
+  firstName     String?
+  lastName      String?
+  company       String?
+  phone         String?
+  
+  // Session metadata
+  ipAddressHash String?
+  userAgent     String?
+  referrerSource String?
+  abTestVariant String?
+  
+  // Timestamps
+  startedAt     DateTime @default(now())
+  lastActivity  DateTime @default(now())
+  expiresAt     DateTime @default(dbgenerated("(CURRENT_TIMESTAMP + INTERVAL '24 hours')"))
+  
+  @@index([expiresAt])
+  @@index([lastActivity])
+  @@index([ipAddressHash, startedAt])
+  @@map("assessment_sessions")
+}
+
+model HubspotSyncQueue {
+  id            String   @id @default(uuid())
+  assessmentId  String
+  
+  // Sync data
+  payload       Json
+  syncType      String   // 'contact', 'deal', 'contact_and_deal'
+  
+  // Retry logic
+  retryCount    Int      @default(0)
+  maxRetries    Int      @default(5)
+  nextRetryAt   DateTime @default(now())
+  retryDelaySeconds Int  @default(60)
+  
+  // Tracking
+  createdAt     DateTime @default(now())
+  lastAttemptAt DateTime?
+  lastError     String?
+  
+  // Success tracking
+  completedAt        DateTime?
+  hubspotContactId   String?
+  hubspotDealId      String?
+  
+  // Relations
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  
+  @@index([nextRetryAt, retryCount])
+  @@index([assessmentId])
+  @@index([createdAt])
+  @@map("hubspot_sync_queue")
+}
+```
+
+**Database Migration Scripts:**
+- Initial migration with all tables, indexes, and constraints
+- Database triggers for automatic timestamp updates
+- Check constraints for enum-like field validation
+- Performance indexes for common query patterns
+- Privacy compliance functions (email scrubbing)
+
+**TDD DATABASE SETUP:**
+- Test database configuration separate from development
+- Database seeding utilities for consistent test scenarios
+- Transaction wrapper for test isolation
+- Test data factories for creating assessment records
+- Mock data generators that respect schema constraints
+
+**Prisma Client Configuration:**
+```typescript
+// lib/prisma.ts
+import { PrismaClient } from '@prisma/client';
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+export const prisma = globalForPrisma.prisma ?? new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error']
+});
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+```
+
+**Database Utility Functions:**
+```typescript
+// lib/db-utils.ts
+export async function createAssessmentSession(data: CreateSessionData): Promise<AssessmentSession> {
+  return await prisma.assessmentSession.create({
+    data: {
+      sessionId: generateSessionId(),
+      ipAddressHash: hashIP(data.ipAddress),
+      userAgent: data.userAgent,
+      referrerSource: data.referrer,
+      abTestVariant: data.abTestVariant
+    }
+  });
+}
+
+export async function saveAssessmentProgress(sessionId: string, data: ProgressData): Promise<void> {
+  await prisma.assessmentSession.update({
+    where: { sessionId },
+    data: {
+      currentStep: data.step,
+      responses: data.responses,
+      email: data.email,
+      lastActivity: new Date()
+    }
+  });
+}
+```
+
+**Privacy Compliance Implementation:**
+- Automated email scrubbing function (30-day retention)
+- IP address hashing for analytics without storing raw IPs
+- Data purge functions for GDPR compliance
+- Session cleanup for expired assessment sessions
+- PII removal while preserving analytics data
+
+**HubSpot Integration Schema:**
+- Queue system for failed sync retries
+- Exponential backoff retry logic
+- Contact and deal creation tracking
+- Sync status monitoring and error logging
+- Rate limiting compliance with HubSpot API
+
+**Database Performance Optimization:**
+- Strategic indexing for common query patterns
+- JSONB field optimization for assessment responses
+- Connection pooling configuration
+- Query optimization for analytics queries
+- Efficient data retention and cleanup
+
+**Environment Configuration:**
+- Development database setup (local PostgreSQL)
+- Test database configuration (separate instance)
+- Production database configuration (Supabase/Neon)
+- Environment variable management
+- Database connection security
+
+**TDD-READY FEATURES:**
+- Test database reset utilities
+- Transaction-based test isolation
+- Mock data generation respecting schema
+- Database query testing patterns
+- Integration test support for Prisma operations
+
+**TESTING STRATEGY FOR DATABASE:**
+```typescript
+// tests/db/assessment.test.ts
+describe('Assessment Database Operations', () => {
+  beforeEach(async () => {
+    await resetTestDatabase();
+  });
+
+  test('should create assessment session with valid data', async () => {
+    const sessionData = createMockSessionData();
+    const session = await createAssessmentSession(sessionData);
+    
+    expect(session.sessionId).toBeDefined();
+    expect(session.currentStep).toBe(0);
+    expect(session.expiresAt).toBeInstanceOf(Date);
+  });
+
+  test('should save assessment progress correctly', async () => {
+    const session = await createTestAssessmentSession();
+    const progressData = {
+      step: 1,
+      responses: { 'value_assurance_1': 'A' },
+      email: 'test@example.com'
+    };
+
+    await saveAssessmentProgress(session.sessionId, progressData);
+    
+    const updated = await prisma.assessmentSession.findUnique({
+      where: { sessionId: session.sessionId }
+    });
+    
+    expect(updated?.currentStep).toBe(1);
+    expect(updated?.email).toBe('test@example.com');
+  });
+});
+```
+
+**KEY FILES TO CREATE:**
+- /prisma/schema.prisma - Complete database schema
+- /prisma/migrations/ - Database migration files
+- /prisma/seed.ts - Database seeding script
+- /prisma/seed-test.ts - Test database seeding
+- /lib/prisma.ts - Prisma client configuration
+- /lib/db-utils.ts - Database utility functions
+- /lib/db-migrations.ts - Migration utilities
+- /tests/db/ - Database test files
+- /.env.example - Updated with database URLs
+
+# Test Strategy:
+

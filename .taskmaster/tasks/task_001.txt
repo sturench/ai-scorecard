@@ -1,0 +1,120 @@
+# Task ID: 1
+# Title: Project Foundation & Environment Setup
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Establish the complete technical foundation for the AI Reality Check Scorecard with Next.js 14.2, TypeScript, PostgreSQL, and development tooling. This task creates the core project structure that enables all subsequent development work including TDD workflow support, following the technical architecture specifications.
+# Details:
+**TECHNICAL SPECIFICATIONS:**
+
+**Framework Setup (per technical-architecture.md):**
+- Next.js 14.2.x with App Router configuration
+- React 18.3.x with TypeScript 5.5.x strict mode
+- Node.js 20.x runtime environment
+- PostgreSQL 15+ database with connection pooling
+- Tailwind CSS 3.4.x with CSS custom properties support
+- Essential dependencies: Framer Motion 11.x, React Hook Form 7.52.x, Zod 3.23.x, next-themes 0.3.x
+
+**Database Integration:**
+- PostgreSQL 15+ with Prisma ORM setup
+- Database connection configuration for development/test/production
+- Environment-based database URL configuration
+- Connection pooling and optimization settings
+
+**Project Structure Implementation:**
+```
+app/
+├── layout.tsx                 # Root layout with providers
+├── page.tsx                  # Landing page (static)
+├── globals.css              # Global styles and CSS variables
+├── assessment/              # Assessment flow routes
+├── api/                     # API routes directory
+└── components/              # Reusable components
+    ├── ui/                  # Base UI components
+    ├── theme/               # Theme provider
+    ├── assessment/          # Assessment-specific components
+    └── layout/              # Layout components
+```
+
+**Environment Configuration:**
+- Environment variables setup (.env.example → .env.local)
+- Database connection strings for PostgreSQL 15+
+- Git repository initialization with main branch
+- Package.json with all required dependencies and scripts
+- TypeScript configuration (tsconfig.json) with strict mode
+- Tailwind CSS configuration with semantic color variables
+- ESLint and Prettier configuration for code quality
+
+**Next.js Configuration (per technical-architecture.md):**
+- next.config.js with optimizations for assessment platform
+- Bundle analyzer integration
+- Image optimization settings
+- API route configuration
+- Performance optimizations for executive user experience
+
+**CSS Custom Properties System:**
+```css
+:root {
+  --primary: #4f46e5;
+  --secondary: #6b7280;
+  --accent: #10b981;
+  --background: #ffffff;
+  --text: #111827;
+  --border: #e5e7eb;
+  
+  /* Assessment-specific colors */
+  --champion: #059669;
+  --builder: #0891b2;
+  --risk: #ea580c;
+  --alert: #dc2626;
+  --crisis: #991b1b;
+}
+```
+
+**Development Scripts:**
+- `npm run dev` - Development server
+- `npm run build` - Production build
+- `npm run lint` - Code linting
+- `npm run typecheck` - TypeScript validation
+- `npm run test` - Test execution setup
+- `npm run test:watch` - Test watch mode
+- `npm run db:migrate` - Database migrations
+- `npm run db:studio` - Prisma Studio
+
+**TDD SETUP REQUIREMENTS:**
+- Jest 29.x configuration with TypeScript support
+- React Testing Library setup for component testing
+- Project structure that supports test file organization
+- TypeScript configuration compatible with Jest
+- Import alias configuration for clean test imports
+- Test database configuration setup
+- Mock strategies for external dependencies
+- Development scripts preparation for test commands
+
+**Development Tooling (per technical-architecture.md):**
+- ESLint with Next.js and TypeScript rules
+- Prettier for code formatting
+- Husky for git hooks
+- lint-staged for pre-commit checks
+- TypeScript strict mode configuration
+- Path mapping for clean imports
+
+**KEY FILES TO CREATE:**
+- /package.json - All dependencies with explicit versions (Node.js 20.x, Next.js 14.2.x, PostgreSQL 15+)
+- /next.config.js - Next.js configuration with optimizations per technical-architecture.md
+- /tailwind.config.ts - Tailwind with semantic colors
+- /tsconfig.json - TypeScript strict configuration with path mapping
+- /jest.config.js - Jest configuration for TDD setup
+- /app/layout.tsx - Root layout with theme provider
+- /app/page.tsx - Landing page placeholder
+- /app/globals.css - CSS custom properties and base styles
+- /.env.example - Environment variables template including DATABASE_URL
+- /.gitignore - Git ignore patterns
+- /README.md - Project setup instructions with database setup
+- /prisma/schema.prisma - Initial Prisma schema
+
+**REFERENCE DOCUMENTATION:**
+Complete technical architecture specifications available at: /workspaces/ai-scorecard/implementation-spec/technical-architecture.md
+
+# Test Strategy:
+

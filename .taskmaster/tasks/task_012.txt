@@ -1,0 +1,632 @@
+# Task ID: 12
+# Title: Mobile-First Design & Cross-Platform Optimization
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Implement comprehensive mobile-first responsive design system and cross-browser compatibility for the complete assessment platform. Optimize specifically for 40%+ executive mobile users with performance-focused mobile experience, accessibility compliance, and TDD-driven component testing across devices. Reference implementation-spec/user-experience-flow.md for mobile-specific patterns.
+# Details:
+**MOBILE-FIRST DESIGN & CROSS-PLATFORM IMPLEMENTATION:**
+
+**Mobile-First Requirements (40%+ Executive Mobile Users):**
+- Reference /workspaces/ai-scorecard/implementation-spec/user-experience-flow.md for mobile-specific patterns, touch optimization, and responsive breakpoints
+- Mobile-first approach optimized for executive users (40%+ mobile traffic)
+- Breakpoint system: mobile (320px-768px), tablet (768px-1024px), desktop (1024px+)
+- Touch-optimized interface with minimum 44px touch targets
+- Executive-appropriate typography scaling and spacing
+- Adaptive content strategy based on screen real estate
+
+**Responsive Breakpoint System:**
+```typescript
+// styles/breakpoints.ts
+export const breakpoints = {
+  mobile: '320px',
+  mobileLg: '480px',
+  tablet: '768px',
+  desktop: '1024px',
+  desktopLg: '1280px',
+  desktopXl: '1440px'
+} as const;
+
+export const mediaQueries = {
+  mobile: `@media (min-width: ${breakpoints.mobile})`,
+  mobileLg: `@media (min-width: ${breakpoints.mobileLg})`,
+  tablet: `@media (min-width: ${breakpoints.tablet})`,
+  desktop: `@media (min-width: ${breakpoints.desktop})`,
+  desktopLg: `@media (min-width: ${breakpoints.desktopLg})`,
+  desktopXl: `@media (min-width: ${breakpoints.desktopXl})`,
+  
+  // Max-width queries for mobile-specific styles
+  mobileOnly: `@media (max-width: ${breakpoints.tablet})`,
+  tabletOnly: `@media (min-width: ${breakpoints.tablet}) and (max-width: ${breakpoints.desktop})`,
+  
+  // Executive mobile optimization
+  executiveMobile: `@media (max-width: ${breakpoints.tablet}) and (orientation: portrait)`,
+  
+  // High-density displays
+  retina: '@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi)',
+  
+  // Accessibility preferences
+  reducedMotion: '@media (prefers-reduced-motion: reduce)',
+  highContrast: '@media (prefers-contrast: high)',
+  darkMode: '@media (prefers-color-scheme: dark)'
+} as const;
+```
+
+**Mobile-Optimized Assessment Components:**
+```typescript
+// components/assessment/ResponsiveStepContainer.tsx
+interface ResponsiveStepContainerProps {
+  stepNumber: number;
+  stepConfig: AssessmentStepConfig;
+}
+
+export function ResponsiveStepContainer({ stepNumber, stepConfig }: ResponsiveStepContainerProps) {
+  const [isMobile, setIsMobile] = useState(false);
+  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
+  const [viewportHeight, setViewportHeight] = useState(0);
+
+  useLayoutEffect(() => {
+    const updateLayout = () => {
+      const mobile = window.innerWidth < 768;
+      const landscape = window.innerWidth > window.innerHeight;
+      
+      setIsMobile(mobile);
+      setOrientation(landscape ? 'landscape' : 'portrait');
+      setViewportHeight(window.innerHeight);
+    };
+
+    updateLayout();
+    window.addEventListener('resize', updateLayout);
+    window.addEventListener('orientationchange', updateLayout);
+    
+    return () => {
+      window.removeEventListener('resize', updateLayout);
+      window.removeEventListener('orientationchange', updateLayout);
+    };
+  }, []);
+
+  return (
+    <div className={cn(
+      "responsive-step-container",
+      isMobile && "mobile-layout",
+      isMobile && orientation === 'landscape' && "landscape-layout"
+    )}>
+      {/* Mobile: Compact header */}
+      {isMobile ? (
+        <MobileStepHeader 
+          stepNumber={stepNumber}
+          title={stepConfig.title}
+          progress={(stepNumber / 4) * 100}
+        />
+      ) : (
+        <DesktopStepHeader 
+          stepNumber={stepNumber}
+          title={stepConfig.title}
+          description={stepConfig.description}
+          progress={(stepNumber / 4) * 100}
+        />
+      )}
+
+      {/* Responsive question layout */}
+      <div className={cn(
+        "questions-container",
+        isMobile && "mobile-questions",
+        isMobile && viewportHeight < 600 && "compact-mobile"
+      )}>
+        {stepConfig.questions.map((question, index) => (
+          <ResponsiveQuestion
+            key={question.id}
+            question={question}
+            isMobile={isMobile}
+            isCompact={isMobile && viewportHeight < 600}
+            autoFocus={index === 0}
+          />
+        ))}
+      </div>
+
+      {/* Mobile: Fixed bottom navigation */}
+      {isMobile ? (
+        <MobileBottomNavigation 
+          stepNumber={stepNumber}
+          canProceed={canProceedToNext}
+          onNext={handleNext}
+          onPrevious={handlePrevious}
+        />
+      ) : (
+        <DesktopNavigation 
+          stepNumber={stepNumber}
+          canProceed={canProceedToNext}
+          onNext={handleNext}
+          onPrevious={handlePrevious}
+        />
+      )}
+    </div>
+  );
+}
+
+// components/assessment/ResponsiveQuestion.tsx
+interface ResponsiveQuestionProps {
+  question: AssessmentQuestion;
+  isMobile: boolean;
+  isCompact: boolean;
+  autoFocus?: boolean;
+}
+
+export function ResponsiveQuestion({ question, isMobile, isCompact, autoFocus }: ResponsiveQuestionProps) {
+  const [selectedOption, setSelectedOption] = useState<string | undefined>();
+  
+  return (
+    <div className={cn(
+      "responsive-question",
+      isMobile && "mobile-question",
+      isCompact && "compact-question"
+    )}>
+      {/* Question header */}
+      <div className="question-header">
+        <h3 className={cn(
+          "question-title",
+          isMobile ? "text-lg" : "text-xl",
+          isCompact && "text-base"
+        )}>
+          {question.title}
+        </h3>
+        <p className={cn(
+          "question-text",
+          isMobile ? "text-sm" : "text-base",
+          isCompact && "text-xs"
+        )}>
+          {question.question}
+        </p>
+      </div>
+
+      {/* Mobile: Stack options vertically with touch optimization */}
+      <div className={cn(
+        "options-container",
+        isMobile ? "mobile-options space-y-2" : "desktop-options space-y-3"
+      )}>
+        {Object.entries(question.options).map(([key, option]) => (
+          <TouchOptimizedOption
+            key={key}
+            optionKey={key}
+            option={option}
+            isSelected={selectedOption === key}
+            onSelect={() => setSelectedOption(key)}
+            isMobile={isMobile}
+            isCompact={isCompact}
+            autoFocus={autoFocus && key === 'A'}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// components/assessment/TouchOptimizedOption.tsx
+interface TouchOptimizedOptionProps {
+  optionKey: string;
+  option: { text: string; points: number };
+  isSelected: boolean;
+  onSelect: () => void;
+  isMobile: boolean;
+  isCompact: boolean;
+  autoFocus?: boolean;
+}
+
+export function TouchOptimizedOption({ 
+  optionKey, 
+  option, 
+  isSelected, 
+  onSelect, 
+  isMobile, 
+  isCompact,
+  autoFocus 
+}: TouchOptimizedOptionProps) {
+  return (
+    <button
+      className={cn(
+        "touch-option w-full text-left rounded-lg border-2 transition-all duration-200",
+        // Touch-optimized sizing
+        isMobile ? "min-h-[44px] p-3" : "p-4",
+        isCompact && "min-h-[40px] p-2",
+        // Visual states
+        isSelected 
+          ? "border-blue-500 bg-blue-50 text-blue-900 shadow-sm" 
+          : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50",
+        // Touch feedback
+        isMobile && "active:scale-98 active:bg-blue-100"
+      )}
+      onClick={onSelect}
+      autoFocus={autoFocus}
+      // Accessibility
+      aria-pressed={isSelected}
+      role="radio"
+    >
+      <div className="flex items-start gap-2">
+        <span className={cn(
+          "option-key font-bold text-blue-600 flex-shrink-0",
+          isMobile ? "text-base" : "text-lg",
+          isCompact && "text-sm"
+        )}>
+          {optionKey})
+        </span>
+        <span className={cn(
+          "option-text text-gray-800 leading-relaxed",
+          isMobile ? "text-sm" : "text-base",
+          isCompact && "text-xs leading-tight"
+        )}>
+          {option.text}
+        </span>
+      </div>
+    </button>
+  );
+}
+```
+
+**Mobile Bottom Navigation:**
+```typescript
+// components/assessment/MobileBottomNavigation.tsx
+interface MobileBottomNavigationProps {
+  stepNumber: number;
+  canProceed: boolean;
+  onNext: () => void;
+  onPrevious: () => void;
+}
+
+export function MobileBottomNavigation({ 
+  stepNumber, 
+  canProceed, 
+  onNext, 
+  onPrevious 
+}: MobileBottomNavigationProps) {
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  // Hide navigation on scroll down, show on scroll up
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const isScrollingDown = currentScrollY > lastScrollY;
+      
+      setIsVisible(!isScrollingDown || currentScrollY < 100);
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
+  return (
+    <div className={cn(
+      "mobile-bottom-nav fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 transition-transform duration-300 z-50",
+      "safe-area-bottom", // iOS safe area
+      !isVisible && "translate-y-full"
+    )}>
+      <div className="flex items-center justify-between gap-4">
+        {/* Previous button */}
+        <button
+          onClick={onPrevious}
+          disabled={stepNumber === 1}
+          className={cn(
+            "flex-1 px-4 py-3 rounded-lg font-medium transition-colors",
+            stepNumber === 1 
+              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300 active:bg-gray-400"
+          )}
+        >
+          ← Previous
+        </button>
+
+        {/* Progress indicator */}
+        <div className="flex gap-1">
+          {[1, 2, 3, 4].map((step) => (
+            <div
+              key={step}
+              className={cn(
+                "w-2 h-2 rounded-full transition-colors",
+                step <= stepNumber ? "bg-blue-600" : "bg-gray-300"
+              )}
+            />
+          ))}
+        </div>
+
+        {/* Next button */}
+        <button
+          onClick={onNext}
+          disabled={!canProceed}
+          className={cn(
+            "flex-1 px-4 py-3 rounded-lg font-medium transition-colors",
+            canProceed
+              ? "bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800"
+              : "bg-gray-100 text-gray-400 cursor-not-allowed"
+          )}
+        >
+          {stepNumber === 4 ? 'Complete' : 'Next'} →
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+**Cross-Browser Compatibility Testing:**
+```typescript
+// lib/browser-support/compatibility.ts
+export interface BrowserSupport {
+  name: string;
+  version: string;
+  supported: boolean;
+  features: FeatureSupport;
+}
+
+export interface FeatureSupport {
+  css: {
+    grid: boolean;
+    flexbox: boolean;
+    customProperties: boolean;
+    animations: boolean;
+  };
+  js: {
+    es6: boolean;
+    fetch: boolean;
+    localStorage: boolean;
+    intersection: boolean;
+  };
+}
+
+export class BrowserCompatibility {
+  private userAgent: string;
+  
+  constructor() {
+    this.userAgent = navigator.userAgent;
+  }
+
+  detectBrowser(): BrowserInfo {
+    const browsers = [
+      { name: 'Chrome', pattern: /Chrome\/(\d+)/ },
+      { name: 'Firefox', pattern: /Firefox\/(\d+)/ },
+      { name: 'Safari', pattern: /Safari\/(\d+)/ },
+      { name: 'Edge', pattern: /Edg\/(\d+)/ },
+      { name: 'Internet Explorer', pattern: /MSIE (\d+)|Trident.*rv:(\d+)/ }
+    ];
+
+    for (const browser of browsers) {
+      const match = this.userAgent.match(browser.pattern);
+      if (match) {
+        return {
+          name: browser.name,
+          version: match[1] || match[2],
+          userAgent: this.userAgent
+        };
+      }
+    }
+
+    return { name: 'Unknown', version: '0', userAgent: this.userAgent };
+  }
+
+  checkFeatureSupport(): FeatureSupport {
+    return {
+      css: {
+        grid: CSS.supports('display', 'grid'),
+        flexbox: CSS.supports('display', 'flex'),
+        customProperties: CSS.supports('--custom', 'property'),
+        animations: CSS.supports('animation', 'none')
+      },
+      js: {
+        es6: typeof Symbol !== 'undefined',
+        fetch: typeof fetch !== 'undefined',
+        localStorage: typeof localStorage !== 'undefined',
+        intersection: typeof IntersectionObserver !== 'undefined'
+      }
+    };
+  }
+
+  getSupportLevel(): 'full' | 'partial' | 'minimal' | 'unsupported' {
+    const browser = this.detectBrowser();
+    const features = this.checkFeatureSupport();
+    
+    // Minimum requirements for executive users
+    const criticalFeatures = [
+      features.css.flexbox,
+      features.js.fetch,
+      features.js.localStorage
+    ];
+
+    const supportedCritical = criticalFeatures.filter(Boolean).length;
+    
+    if (supportedCritical === criticalFeatures.length) {
+      return features.css.grid && features.js.intersection ? 'full' : 'partial';
+    } else if (supportedCritical >= 2) {
+      return 'minimal';
+    } else {
+      return 'unsupported';
+    }
+  }
+
+  loadPolyfills(): Promise<void> {
+    const promises: Promise<any>[] = [];
+    const features = this.checkFeatureSupport();
+
+    if (!features.js.fetch) {
+      promises.push(import('whatwg-fetch'));
+    }
+
+    if (!features.js.intersection) {
+      promises.push(import('intersection-observer'));
+    }
+
+    if (!features.css.customProperties) {
+      promises.push(import('css-vars-ponyfill').then(ponyfill => ponyfill.default()));
+    }
+
+    return Promise.all(promises).then(() => {});
+  }
+}
+```
+
+**TDD IMPLEMENTATION APPROACH:**
+
+**RED Phase - Write Failing Tests:**
+```typescript
+// tests/responsive/ResponsiveStepContainer.test.tsx
+describe('Responsive Step Container', () => {
+  test('should render mobile layout when viewport width < 768px', () => {
+    // Mock window.innerWidth
+    Object.defineProperty(window, 'innerWidth', {
+      writable: true,
+      configurable: true,
+      value: 500
+    });
+
+    render(<ResponsiveStepContainer stepNumber={1} stepConfig={mockStepConfig} />);
+
+    expect(screen.getByTestId('mobile-step-header')).toBeInTheDocument();
+    expect(screen.getByTestId('mobile-bottom-nav')).toBeInTheDocument();
+  });
+
+  test('should render desktop layout when viewport width >= 768px', () => {
+    Object.defineProperty(window, 'innerWidth', {
+      writable: true,
+      configurable: true,
+      value: 1024
+    });
+
+    render(<ResponsiveStepContainer stepNumber={1} stepConfig={mockStepConfig} />);
+
+    expect(screen.getByTestId('desktop-step-header')).toBeInTheDocument();
+    expect(screen.getByTestId('desktop-navigation')).toBeInTheDocument();
+  });
+
+  test('should apply compact layout when mobile viewport height < 600px', () => {
+    Object.defineProperty(window, 'innerWidth', { value: 400 });
+    Object.defineProperty(window, 'innerHeight', { value: 500 });
+
+    render(<ResponsiveStepContainer stepNumber={1} stepConfig={mockStepConfig} />);
+
+    expect(screen.getByTestId('questions-container')).toHaveClass('compact-mobile');
+  });
+});
+
+// tests/responsive/TouchOptimizedOption.test.tsx
+describe('Touch Optimized Option', () => {
+  test('should have minimum 44px height on mobile', () => {
+    render(
+      <TouchOptimizedOption
+        optionKey="A"
+        option={{ text: 'Test option', points: 25 }}
+        isSelected={false}
+        onSelect={jest.fn()}
+        isMobile={true}
+        isCompact={false}
+      />
+    );
+
+    const button = screen.getByRole('radio');
+    expect(button).toHaveClass('min-h-[44px]');
+  });
+
+  test('should apply touch feedback styles on mobile', async () => {
+    const mockOnSelect = jest.fn();
+    
+    render(
+      <TouchOptimizedOption
+        optionKey="A"
+        option={{ text: 'Test option', points: 25 }}
+        isSelected={false}
+        onSelect={mockOnSelect}
+        isMobile={true}
+        isCompact={false}
+      />
+    );
+
+    const button = screen.getByRole('radio');
+    expect(button).toHaveClass('active:scale-98');
+
+    await user.click(button);
+    expect(mockOnSelect).toHaveBeenCalled();
+  });
+
+  test('should reduce text size in compact mode', () => {
+    render(
+      <TouchOptimizedOption
+        optionKey="A"
+        option={{ text: 'Test option', points: 25 }}
+        isSelected={false}
+        onSelect={jest.fn()}
+        isMobile={true}
+        isCompact={true}
+      />
+    );
+
+    const optionText = screen.getByText('Test option');
+    expect(optionText).toHaveClass('text-xs');
+  });
+});
+
+// tests/browser-support/compatibility.test.ts
+describe('Browser Compatibility', () => {
+  test('should detect Chrome browser correctly', () => {
+    const compatibility = new BrowserCompatibility();
+    
+    // Mock Chrome user agent
+    Object.defineProperty(navigator, 'userAgent', {
+      writable: true,
+      value: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    });
+
+    const browser = compatibility.detectBrowser();
+    
+    expect(browser.name).toBe('Chrome');
+    expect(browser.version).toBe('91');
+  });
+
+  test('should return full support for modern browsers', () => {
+    const compatibility = new BrowserCompatibility();
+    
+    // Mock all features as supported
+    Object.defineProperty(CSS, 'supports', {
+      value: () => true
+    });
+    
+    const supportLevel = compatibility.getSupportLevel();
+    
+    expect(supportLevel).toBe('full');
+  });
+
+  test('should load polyfills for missing features', async () => {
+    const compatibility = new BrowserCompatibility();
+    
+    // Mock missing fetch
+    delete (global as any).fetch;
+    
+    const loadPromise = compatibility.loadPolyfills();
+    
+    expect(loadPromise).resolves.toBeUndefined();
+  });
+});
+```
+
+**GREEN Phase - Minimal Implementation:**
+- Basic responsive breakpoints without advanced logic
+- Simple mobile/desktop layout switching
+- Basic touch optimization
+- Minimal browser compatibility checks
+
+**REFACTOR Phase - Production Ready:**
+- Advanced responsive design with orientation handling
+- Sophisticated touch gestures and interactions
+- Comprehensive browser compatibility and polyfills
+- Performance optimization for mobile devices
+
+**KEY FILES TO CREATE:**
+- /styles/breakpoints.ts - Responsive breakpoint system
+- /components/assessment/ResponsiveStepContainer.tsx - Responsive step layout
+- /components/assessment/TouchOptimizedOption.tsx - Touch-optimized components
+- /components/assessment/MobileBottomNavigation.tsx - Mobile navigation
+- /lib/browser-support/compatibility.ts - Browser compatibility utilities
+- /hooks/useResponsive.ts - Responsive design hooks
+- /styles/responsive.css - Responsive design utilities
+- /tests/responsive/ - Responsive design tests
+- /tests/browser-support/ - Browser compatibility tests
+
+# Test Strategy:
+
