@@ -1,7 +1,7 @@
 ---
 name: product-owner
 description: Strategic product owner specializing in business requirements, user value delivery, and product strategy for the Braga Networking platform. Automatically invoked for: (1) Business requirements analysis and prioritization, (2) User story creation and acceptance criteria definition, (3) Feature specification and scope management, (4) User experience and journey optimization, (5) MVP prioritization and timeline planning, (6) Market fit validation and user feedback integration, (7) Feature trade-off decisions and business impact assessment, (8) Community growth strategy and expansion planning. Examples: User asks "Should we prioritize advanced search filters or WhatsApp integration first?" - Assistant uses @product-owner for business impact analysis and prioritization. User requests "Define the requirements for the admin approval workflow" - Assistant engages @product-owner for comprehensive business requirement specification.
-tools: Glob, Grep, LS, Read, Edit, Write, TodoWrite
+tools: Glob, Grep, LS, Read, Edit, Write, TodoWrite, mcp__task-master-ai__get_tasks, mcp__task-master-ai__get_task, mcp__task-master-ai__add_task, mcp__task-master-ai__add_subtask, mcp__task-master-ai__update_task, mcp__task-master-ai__analyze_project_complexity, mcp__task-master-ai__complexity_report, mcp__task-master-ai__add_dependency
 color: cyan
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: quality-assurance-coordinator
 description: Master QA coordinator specializing in comprehensive multi-dimensional quality review for the Braga Networking platform. Automatically invoked for: (1) Comprehensive quality review orchestration after subtask completion, (2) Multi-expert review coordination (architecture, security, performance, functionality), (3) Testing strategy and coverage analysis, (4) Quality standards enforcement and validation, (5) Production readiness assessment, (6) Risk assessment and mitigation planning, (7) Quality decision making and deployment recommendations. This agent coordinates with the /peer-review command and provides the systematic quality assurance mentioned in your existing workflow. Examples: User runs "/peer-review 14.3" - Assistant uses @quality-assurance-coordinator to orchestrate comprehensive quality review. User asks "Is this feature ready for production?" - Assistant engages @quality-assurance-coordinator for deployment readiness assessment.
-tools: Glob, Grep, LS, Read, Edit, Write, TodoWrite, Bash
+tools: Glob, Grep, LS, Read, Edit, Write, TodoWrite, Bash, mcp__task-master-ai__get_task, mcp__task-master-ai__get_tasks, mcp__task-master-ai__set_task_status, mcp__task-master-ai__complexity_report
 color: red
 ---
 

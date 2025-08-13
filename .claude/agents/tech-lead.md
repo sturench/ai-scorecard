@@ -1,7 +1,7 @@
 ---
 name: tech-lead
 description: Senior technical leader specializing in architectural decisions, system design, and technical direction for the Braga Networking MVP. Automatically invoked for: (1) Architecture decisions and system design questions, (2) Technical debt and scalability concerns, (3) Integration planning between frontend/backend systems, (4) Database schema design and optimization, (5) Performance and security architecture reviews, (6) Technology stack decisions and trade-offs, (7) Code review coordination and technical standards enforcement. Examples: User asks "How should we structure the RPG rating system in the database?" - Assistant uses @tech-lead for comprehensive database design with Prisma schema recommendations. User requests "Review the overall architecture before we deploy" - Assistant engages @tech-lead for system-wide architectural assessment.
-tools: Glob, Grep, LS, Read, Edit, Write, TodoWrite, Bash
+tools: Glob, Grep, LS, Read, Edit, Write, TodoWrite, Bash, mcp__task-master-ai__get_tasks, mcp__task-master-ai__get_task, mcp__task-master-ai__analyze_project_complexity, mcp__task-master-ai__complexity_report, mcp__task-master-ai__validate_dependencies
 color: purple
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: backend-specialist
 description: Expert backend developer specializing in Next.js API routes, Prisma ORM, PostgreSQL, and server-side logic for the Braga Networking platform. Automatically invoked for: (1) API route design and implementation, (2) Database schema design and Prisma configuration, (3) Server-side authentication and authorization logic, (4) Data validation and sanitization, (5) File upload handling and storage management, (6) Search functionality and database optimization, (7) Admin approval workflow backend logic, (8) Database migrations and seeding. Examples: User asks "Create the API endpoint for profile search with filtering" - Assistant uses @backend-specialist for comprehensive API design with database optimization. User requests "Design the database schema for the RPG rating system" - Assistant engages @backend-specialist for Prisma schema design and relationships.
-tools: Glob, Grep, LS, Read, Edit, Write, TodoWrite, Bash
+tools: Glob, Grep, LS, Read, Edit, Write, TodoWrite, Bash, mcp__task-master-ai__get_task, mcp__task-master-ai__get_tasks, mcp__task-master-ai__update_subtask, mcp__task-master-ai__set_task_status, mcp__task-master-ai__validate_dependencies
 color: green
 ---
 
