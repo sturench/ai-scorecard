@@ -82,7 +82,9 @@ describe('Assessment Data Helpers', () => {
     expect(typeof mockAssessment.id).toBe('string');
     expect(typeof mockAssessment.sessionId).toBe('string');
     expect(typeof mockAssessment.totalScore).toBe('number');
-    expect(['beginner', 'builder', 'leader', 'pioneer']).toContain(mockAssessment.scoreCategory);
+    expect(['champion', 'builder', 'risk_zone', 'alert', 'crisis']).toContain(
+      mockAssessment.scoreCategory
+    );
 
     expect(mockAssessment.scoreBreakdown).toHaveProperty('valueAssurance');
     expect(mockAssessment.scoreBreakdown).toHaveProperty('customerSafe');

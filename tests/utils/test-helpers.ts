@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { Assessment, AssessmentSession, AssessmentResponse } from '@prisma/client';
+import { Assessment, AssessmentSession } from '@prisma/client';
 
 /**
  * Test data factory for creating mock assessment objects
@@ -7,6 +7,7 @@ import { Assessment, AssessmentSession, AssessmentResponse } from '@prisma/clien
 export const createMockAssessment = (overrides?: Partial<Assessment>): Assessment => ({
   id: faker.string.uuid(),
   sessionId: faker.string.uuid(),
+  responses: {},
   totalScore: faker.number.int({ min: 0, max: 100 }),
   scoreBreakdown: {
     valueAssurance: faker.number.int({ min: 0, max: 100 }),
@@ -14,10 +15,49 @@ export const createMockAssessment = (overrides?: Partial<Assessment>): Assessmen
     riskCompliance: faker.number.int({ min: 0, max: 100 }),
     governance: faker.number.int({ min: 0, max: 100 }),
   },
-  scoreCategory: faker.helpers.arrayElement(['beginner', 'builder', 'leader', 'pioneer']),
+  scoreCategory: faker.helpers.arrayElement([
+    'champion',
+    'builder',
+    'risk_zone',
+    'alert',
+    'crisis',
+  ]),
   recommendations: [faker.lorem.paragraph(), faker.lorem.paragraph()],
+  // Progressive user data (can be null)
+  email: faker.internet.email(),
+  company: faker.company.name(),
+  firstName: faker.person.firstName(),
+  lastName: faker.person.lastName(),
+  phone: faker.phone.number(),
+  jobTitle: faker.person.jobTitle(),
+  companySize: faker.helpers.arrayElement(['startup', 'small', 'medium', 'large', 'enterprise']),
+  industry: faker.company.buzzVerb(),
+  // HubSpot sync fields
+  hubspotSyncStatus: 'pending',
+  hubspotSyncAttempts: 0,
+  hubspotContactId: null,
+  hubspotDealId: null,
+  hubspotSyncError: null,
+  hubspotSyncedAt: null,
+  hubspotLastRetryAt: null,
+  // Timestamps
   createdAt: faker.date.recent(),
   updatedAt: faker.date.recent(),
+  completedAt: faker.date.recent(),
+  emailScrubbedAt: null,
+  // Analytics
+  completionTimeSeconds: faker.number.int({ min: 300, max: 1800 }),
+  stepTimings: { step1: 45, step2: 67, step3: 89, step4: 120 },
+  browserInfo: { userAgent: faker.internet.userAgent(), viewport: { width: 1920, height: 1080 } },
+  referrerSource: faker.internet.url(),
+  abTestVariant: faker.helpers.arrayElement(['A', 'B', 'control']),
+  deviceType: faker.helpers.arrayElement(['mobile', 'tablet', 'desktop']),
+  abandonmentStep: null,
+  // Email tracking
+  resultEmailSentAt: faker.date.recent(),
+  resultEmailOpenedAt: null,
+  resultEmailClickedAt: null,
+  followupEmailsSent: 0,
   ...overrides,
 });
 
@@ -27,30 +67,29 @@ export const createMockAssessment = (overrides?: Partial<Assessment>): Assessmen
 export const createMockAssessmentSession = (
   overrides?: Partial<AssessmentSession>
 ): AssessmentSession => ({
-  id: faker.string.uuid(),
+  sessionId: faker.string.uuid(),
   startedAt: faker.date.recent(),
-  lastActiveAt: faker.date.recent(),
+  lastActivity: faker.date.recent(), // Fix field name from lastActiveAt
+  expiresAt: faker.date.future(), // Add missing field
   currentStep: faker.number.int({ min: 1, max: 4 }),
-  isCompleted: faker.datatype.boolean(),
+  totalSteps: 4, // Add missing field
+  isComplete: faker.datatype.boolean(), // Fix field name from isCompleted
   responses: {
     value_assurance_1: faker.helpers.arrayElement(['A', 'B', 'C', 'D']),
     value_assurance_2: faker.helpers.arrayElement(['A', 'B', 'C', 'D']),
     customer_safe_1: faker.helpers.arrayElement(['A', 'B', 'C', 'D']),
     customer_safe_2: faker.helpers.arrayElement(['A', 'B', 'C', 'D']),
   },
-  contactInfo: {
-    firstName: faker.person.firstName(),
-    lastName: faker.person.lastName(),
-    email: faker.internet.email(),
-    company: faker.company.name(),
-    role: faker.person.jobTitle(),
-    phone: faker.phone.number(),
-  },
-  hubspotContactId: faker.number.int().toString(),
-  hubspotDealId: faker.number.int().toString(),
-  emailSent: faker.datatype.boolean(),
-  createdAt: faker.date.recent(),
-  updatedAt: faker.date.recent(),
+  // Schema only has email, firstName, lastName, company fields directly
+  email: faker.internet.email(),
+  firstName: faker.person.firstName(),
+  lastName: faker.person.lastName(),
+  company: faker.company.name(),
+  // Analytics fields
+  userAgent: faker.internet.userAgent(),
+  ipAddress: faker.internet.ip(),
+  referrer: faker.internet.url(),
+  abTestVariant: faker.helpers.arrayElement(['A', 'B', 'control']),
   ...overrides,
 });
 
@@ -215,11 +254,14 @@ export const createTestScenario = (scenario: 'complete' | 'partial' | 'new' = 'c
   const scenarios = {
     complete: {
       session: createMockAssessmentSession({
-        id: sessionId,
+        sessionId,
         currentStep: 4,
-        isCompleted: true,
+        isComplete: true,
         responses: createMockResponses('medium'),
-        contactInfo,
+        email: contactInfo.email,
+        firstName: contactInfo.firstName,
+        lastName: contactInfo.lastName,
+        company: contactInfo.company,
       }),
       assessment: createMockAssessment({
         sessionId,
@@ -229,24 +271,30 @@ export const createTestScenario = (scenario: 'complete' | 'partial' | 'new' = 'c
     },
     partial: {
       session: createMockAssessmentSession({
-        id: sessionId,
+        sessionId,
         currentStep: 2,
-        isCompleted: false,
+        isComplete: false,
         responses: {
           value_assurance_1: 'B',
           value_assurance_2: 'A',
         },
-        contactInfo,
+        email: contactInfo.email,
+        firstName: contactInfo.firstName,
+        lastName: contactInfo.lastName,
+        company: contactInfo.company,
       }),
       assessment: null,
     },
     new: {
       session: createMockAssessmentSession({
-        id: sessionId,
+        sessionId,
         currentStep: 1,
-        isCompleted: false,
+        isComplete: false,
         responses: {},
-        contactInfo: null,
+        email: null,
+        firstName: null,
+        lastName: null,
+        company: null,
       }),
       assessment: null,
     },

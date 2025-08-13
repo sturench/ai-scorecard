@@ -72,40 +72,35 @@ export const seedTestDb = async (scenario: 'minimal' | 'full' = 'minimal'): Prom
       await db.assessmentSession.createMany({
         data: [
           {
-            id: 'test-session-1',
+            sessionId: 'test-session-1',
             startedAt: new Date(),
-            lastActiveAt: new Date(),
+            lastActivity: new Date(),
             currentStep: 1,
-            isCompleted: false,
+            isComplete: false,
             responses: {},
-            contactInfo: null,
           },
           {
-            id: 'test-session-2',
+            sessionId: 'test-session-2',
             startedAt: new Date(Date.now() - 3600000), // 1 hour ago
-            lastActiveAt: new Date(Date.now() - 1800000), // 30 minutes ago
+            lastActivity: new Date(Date.now() - 1800000), // 30 minutes ago
             currentStep: 3,
-            isCompleted: false,
+            isComplete: false,
             responses: {
               value_assurance_1: 'A',
               value_assurance_2: 'B',
               customer_safe_1: 'A',
             },
-            contactInfo: {
-              firstName: 'John',
-              lastName: 'Doe',
-              email: 'john.doe@example.com',
-              company: 'Test Corp',
-              role: 'CEO',
-              phone: '+1234567890',
-            },
+            firstName: 'John',
+            lastName: 'Doe',
+            email: 'john.doe@example.com',
+            company: 'Test Corp',
           },
           {
-            id: 'test-session-completed',
+            sessionId: 'test-session-completed',
             startedAt: new Date(Date.now() - 7200000), // 2 hours ago
-            lastActiveAt: new Date(Date.now() - 3600000), // 1 hour ago
+            lastActivity: new Date(Date.now() - 3600000), // 1 hour ago
             currentStep: 4,
-            isCompleted: true,
+            isComplete: true,
             responses: {
               value_assurance_1: 'A',
               value_assurance_2: 'A',
@@ -124,26 +119,19 @@ export const seedTestDb = async (scenario: 'minimal' | 'full' = 'minimal'): Prom
               governance_2: 'A',
               governance_3: 'B',
             },
-            contactInfo: {
-              firstName: 'Jane',
-              lastName: 'Smith',
-              email: 'jane.smith@example.com',
-              company: 'Innovation Inc',
-              role: 'CTO',
-              phone: '+1987654321',
-            },
-            hubspotContactId: '12345',
-            hubspotDealId: '67890',
-            emailSent: true,
+            firstName: 'Jane',
+            lastName: 'Smith',
+            email: 'jane.smith@example.com',
+            company: 'Innovation Inc',
           },
         ],
       });
 
       // Create corresponding assessment for completed session
-      await db.assessment.create({
+      const assessment = await db.assessment.create({
         data: {
-          id: 'test-assessment-1',
           sessionId: 'test-session-completed',
+          responses: {}, // Add missing required field
           totalScore: 85,
           scoreBreakdown: {
             valueAssurance: 88,
@@ -164,33 +152,27 @@ export const seedTestDb = async (scenario: 'minimal' | 'full' = 'minimal'): Prom
       await db.hubspotSyncQueue.createMany({
         data: [
           {
-            id: 'sync-1',
-            sessionId: 'test-session-completed',
-            operation: 'CREATE_CONTACT',
+            assessmentId: assessment.id,
             payload: {
               firstName: 'Jane',
               lastName: 'Smith',
               email: 'jane.smith@example.com',
               company: 'Innovation Inc',
             },
-            status: 'COMPLETED',
-            attempts: 1,
-            lastAttemptAt: new Date(),
-            hubspotId: '12345',
+            status: 'completed',
+            retryCount: 1,
+            nextRetryAt: new Date(),
           },
           {
-            id: 'sync-2',
-            sessionId: 'test-session-completed',
-            operation: 'CREATE_DEAL',
+            assessmentId: assessment.id,
             payload: {
               dealName: 'AI Readiness Assessment - Innovation Inc',
               amount: 25000,
               associatedContactId: '12345',
             },
-            status: 'COMPLETED',
-            attempts: 1,
-            lastAttemptAt: new Date(),
-            hubspotId: '67890',
+            status: 'completed',
+            retryCount: 1,
+            nextRetryAt: new Date(),
           },
         ],
       });
